@@ -6,6 +6,7 @@ import {
   Interaction,
 } from "discord.js";
 import dotenv from "dotenv";
+import http, { IncomingMessage, ServerResponse } from "http";
 import { initializeMagicHour } from "./utils/magicHour";
 import { initializeTenor } from "./utils/tenor";
 import { startCleanupTimer } from "./utils/stateManager";
@@ -69,6 +70,32 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent, // Required to read message attachments
   ],
+});
+
+// Create HTTP server for Render health checks
+const server = http.createServer(
+  (req: IncomingMessage, res: ServerResponse) => {
+    // Health check endpoint
+    if (req.url === "/health" || req.url === "/") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          status: "ok",
+          service: "discord-face-swap-bot",
+          timestamp: new Date().toISOString(),
+        })
+      );
+    } else {
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      res.end("Not Found");
+    }
+  }
+);
+
+// Start HTTP server on PORT (required for Render)
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  logger.info("Server", `HTTP server listening on port ${PORT}`);
 });
 
 // Bot ready event
@@ -178,6 +205,9 @@ process.on("uncaughtException", (error) => {
 // Graceful shutdown
 process.on("SIGINT", () => {
   logger.warn("Process", "Received SIGINT. Shutting down gracefully...");
+  server.close(() => {
+    logger.info("Server", "HTTP server closed");
+  });
   closeDatabase();
   client.destroy();
   process.exit(0);
@@ -185,6 +215,9 @@ process.on("SIGINT", () => {
 
 process.on("SIGTERM", () => {
   logger.warn("Process", "Received SIGTERM. Shutting down gracefully...");
+  server.close(() => {
+    logger.info("Server", "HTTP server closed");
+  });
   closeDatabase();
   client.destroy();
   process.exit(0);
