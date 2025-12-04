@@ -17,7 +17,7 @@ export const settingsCommandData = new SlashCommandBuilder()
   .setName("settings")
   .setDescription("Manage your bot preferences")
   .addSubcommand((subcommand) =>
-    subcommand.setName("view").setDescription("View your current settings")
+    subcommand.setName("view").setDescription("View your current settings"),
   )
   .addSubcommand((subcommand) =>
     subcommand
@@ -27,8 +27,8 @@ export const settingsCommandData = new SlashCommandBuilder()
         option
           .setName("id")
           .setDescription("Face ID from /myfaces")
-          .setRequired(true)
-      )
+          .setRequired(true),
+      ),
   )
   .addSubcommand((subcommand) =>
     subcommand
@@ -38,8 +38,8 @@ export const settingsCommandData = new SlashCommandBuilder()
         option
           .setName("enabled")
           .setDescription("Enable or disable auto-save")
-          .setRequired(true)
-      )
+          .setRequired(true),
+      ),
   )
   .addSubcommand((subcommand) =>
     subcommand
@@ -51,15 +51,15 @@ export const settingsCommandData = new SlashCommandBuilder()
           .setDescription("Maximum duration in seconds")
           .setRequired(true)
           .setMinValue(1)
-          .setMaxValue(30)
-      )
+          .setMaxValue(30),
+      ),
   );
 
 /**
  * Handle the /settings command
  */
 export async function handleSettingsCommand(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const subcommand = interaction.options.getSubcommand();
 
@@ -88,14 +88,14 @@ export async function handleSettingsCommand(
  * View current settings
  */
 async function handleViewSettings(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const userId = interaction.user.id;
-  const prefs = getUserPreferences(userId);
+  const prefs = await getUserPreferences(userId);
 
   const defaultFaceName = prefs.default_face_id
-    ? (() => {
-        const face = getFaceById(prefs.default_face_id!, userId);
+    ? await (async () => {
+        const face = await getFaceById(prefs.default_face_id!, userId);
         return face ? face.name : "Unknown";
       })()
     : "None";
@@ -120,9 +120,9 @@ async function handleViewSettings(
         name: "⏱️ Max GIF Duration",
         value: `${prefs.max_gif_duration} seconds`,
         inline: true,
-      }
+      },
     )
-    .setColor(0x5865F2)
+    .setColor(0x5865f2)
     .setFooter({ text: "Use /settings [option] to change settings" });
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -132,23 +132,22 @@ async function handleViewSettings(
  * Set default face
  */
 async function handleSetDefaultFace(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const userId = interaction.user.id;
   const faceId = interaction.options.getString("id", true);
 
   // Verify face exists and belongs to user
-  const face = getFaceById(faceId, userId);
+  const face = await getFaceById(faceId, userId);
   if (!face) {
     await interaction.reply({
-      content:
-        "❌ Face not found. Use `/myfaces` to see your saved faces.",
+      content: "❌ Face not found. Use `/myfaces` to see your saved faces.",
       ephemeral: true,
     });
     return;
   }
 
-  setDefaultFace(userId, faceId);
+  await setDefaultFace(userId, faceId);
 
   const embed = new EmbedBuilder()
     .setTitle("✅ Default Face Updated")
@@ -165,17 +164,17 @@ async function handleSetDefaultFace(
  * Set auto-save
  */
 async function handleSetAutoSave(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const userId = interaction.user.id;
   const enabled = interaction.options.getBoolean("enabled", true);
 
-  setAutoSaveFaces(userId, enabled);
+  await setAutoSaveFaces(userId, enabled);
 
   const embed = new EmbedBuilder()
     .setTitle("✅ Auto-Save Updated")
     .setDescription(
-      `Auto-save faces is now **${enabled ? "enabled" : "disabled"}**`
+      `Auto-save faces is now **${enabled ? "enabled" : "disabled"}**`,
     )
     .setColor(0x00ff00)
     .setFooter({
@@ -191,12 +190,12 @@ async function handleSetAutoSave(
  * Set max duration
  */
 async function handleSetMaxDuration(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const userId = interaction.user.id;
   const duration = interaction.options.getInteger("seconds", true);
 
-  setMaxGifDuration(userId, duration);
+  await setMaxGifDuration(userId, duration);
 
   const embed = new EmbedBuilder()
     .setTitle("✅ Max Duration Updated")
@@ -208,4 +207,3 @@ async function handleSetMaxDuration(
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
 }
-

@@ -18,7 +18,7 @@ dotenv.config();
 if (!process.env.DISCORD_BOT_TOKEN || !process.env.DISCORD_CLIENT_ID) {
   logger.error(
     "DeployCommands",
-    "Missing DISCORD_BOT_TOKEN or DISCORD_CLIENT_ID in .env file"
+    "Missing DISCORD_BOT_TOKEN or DISCORD_CLIENT_ID in .env file",
   );
   process.exit(1);
 }
@@ -36,7 +36,7 @@ const commands = [
 ];
 
 const rest = new REST({ version: "10" }).setToken(
-  process.env.DISCORD_BOT_TOKEN
+  process.env.DISCORD_BOT_TOKEN,
 );
 
 async function deployCommands() {
@@ -48,7 +48,7 @@ async function deployCommands() {
     // Register commands globally
     const data = await rest.put(
       Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
-      { body: commands }
+      { body: commands },
     );
 
     logger.info("DeployCommands", "Commands deployed successfully", {
@@ -63,18 +63,18 @@ async function deployCommands() {
 
     logger.info(
       "DeployCommands",
-      "Note: It may take up to 1 hour for commands to appear in all servers."
+      "Note: It may take up to 1 hour for commands to appear in all servers.",
     );
     logger.info(
       "DeployCommands",
-      "Tip: For instant updates during development, use guild-specific commands."
+      "Tip: For instant updates during development, use guild-specific commands.",
     );
   } catch (error) {
     logger.error(
       "DeployCommands",
       "Error deploying commands",
       null,
-      error as Error
+      error as Error,
     );
     process.exit(1);
   }

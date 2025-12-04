@@ -18,7 +18,7 @@ export function createSearchState(
   query: string,
   results: TenorGif[],
   userId: string,
-  channelId: string
+  channelId: string,
 ): SearchState {
   const totalPages = Math.ceil(results.length / 9);
 
@@ -50,7 +50,7 @@ export function createSearchState(
  */
 export function getSearchState(searchId: string): SearchState | undefined {
   const state = activeSearches.get(searchId);
-  
+
   if (state) {
     logger.debug(CONTEXT, "Search state retrieved", {
       searchId,
@@ -60,7 +60,7 @@ export function getSearchState(searchId: string): SearchState | undefined {
   } else {
     logger.warn(CONTEXT, "Search state not found", { searchId });
   }
-  
+
   return state;
 }
 
@@ -69,7 +69,7 @@ export function getSearchState(searchId: string): SearchState | undefined {
  */
 export function updateSearchState(
   searchId: string,
-  updates: Partial<SearchState>
+  updates: Partial<SearchState>,
 ): StateUpdateResult {
   logger.debug(CONTEXT, "Updating search state", { searchId, updates });
 
@@ -83,7 +83,7 @@ export function updateSearchState(
   }
 
   const state = activeSearches.get(searchId)!;
-  
+
   // Log before state
   logger.debug(CONTEXT, "State before update", {
     searchId,
@@ -107,7 +107,9 @@ export function updateSearchState(
     // Verify the update by reading back
     const verifyState = activeSearches.get(searchId);
     if (!verifyState) {
-      logger.error(CONTEXT, "Verification failed - state disappeared", { searchId });
+      logger.error(CONTEXT, "Verification failed - state disappeared", {
+        searchId,
+      });
       return {
         success: false,
         error: "State verification failed",
@@ -116,7 +118,10 @@ export function updateSearchState(
 
     // Verify specific updates were applied
     for (const [key, value] of Object.entries(updates)) {
-      if (key !== "timestamp" && verifyState[key as keyof SearchState] !== value) {
+      if (
+        key !== "timestamp" &&
+        verifyState[key as keyof SearchState] !== value
+      ) {
         logger.error(CONTEXT, "Verification failed - update not applied", {
           searchId,
           key,
@@ -153,7 +158,9 @@ export function deleteSearchState(searchId: string): void {
   if (existed) {
     logger.info(CONTEXT, "Search state deleted", { searchId });
   } else {
-    logger.warn(CONTEXT, "Attempted to delete non-existent state", { searchId });
+    logger.warn(CONTEXT, "Attempted to delete non-existent state", {
+      searchId,
+    });
   }
 }
 
@@ -180,7 +187,9 @@ export function cleanupExpiredStates(): void {
   }
 
   if (cleaned > 0) {
-    logger.info(CONTEXT, "Cleaned up expired search states", { count: cleaned });
+    logger.info(CONTEXT, "Cleaned up expired search states", {
+      count: cleaned,
+    });
   }
 }
 
@@ -188,7 +197,9 @@ export function cleanupExpiredStates(): void {
  * Start automatic cleanup
  */
 export function startCleanupTimer(): NodeJS.Timeout {
-  logger.info(CONTEXT, "Starting cleanup timer", { intervalMs: CLEANUP_INTERVAL });
+  logger.info(CONTEXT, "Starting cleanup timer", {
+    intervalMs: CLEANUP_INTERVAL,
+  });
   return setInterval(cleanupExpiredStates, CLEANUP_INTERVAL);
 }
 

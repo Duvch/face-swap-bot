@@ -176,13 +176,11 @@ Before your bot can respond to commands, you need to register them with Discord:
 ## Step 9: Verify Bot is Running
 
 1. Check Render service logs - you should see:
-
    - "Discord bot is ready!"
    - "Bot is in X server(s)"
    - No error messages
 
 2. Check your Discord server:
-
    - Bot should appear online in the member list
    - Commands should be available (may take up to 1 hour for global commands)
 
@@ -197,13 +195,11 @@ This bot uses SQLite for storing user data (saved faces, preferences, rate limit
 **Important Notes for Render:**
 
 1. **Ephemeral Disk**: Render's free tier uses ephemeral disk storage. This means:
-
    - Database files are stored temporarily
    - Data may be lost if the service restarts or is redeployed
    - For production use, consider upgrading to a persistent disk plan
 
 2. **Database Location**: The bot creates a `data/` directory for the database. On Render:
-
    - Files are stored in the service's filesystem
    - Backups are created automatically by the bot
    - Consider implementing periodic backups to external storage
@@ -226,13 +222,11 @@ This bot uses SQLite for storing user data (saved faces, preferences, rate limit
 **Common Issues:**
 
 1. **"Missing required environment variable"**
-
    - Solution: Verify all environment variables are set in Render dashboard
    - Check for typos in variable names
    - Ensure no extra spaces or quotes
 
 2. **"Failed to login to Discord"**
-
    - Solution: Verify DISCORD_BOT_TOKEN is correct
    - Check that the token hasn't been regenerated
    - Ensure bot is not already logged in elsewhere

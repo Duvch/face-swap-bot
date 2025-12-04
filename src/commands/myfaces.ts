@@ -15,22 +15,22 @@ export const myfacesCommandData = new SlashCommandBuilder()
  * Handle the /myfaces command
  */
 export async function handleMyFacesCommand(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
 
   try {
     const userId = interaction.user.id;
-    const faces = getUserFaces(userId);
+    const faces = await getUserFaces(userId);
 
     if (faces.length === 0) {
       const embed = new EmbedBuilder()
         .setTitle("💾 Your Saved Faces")
         .setDescription(
           "You don't have any saved faces yet!\n\n" +
-          "Use `/savemyface` to save a face for quick reuse."
+            "Use `/savemyface` to save a face for quick reuse.",
         )
-        .setColor(0x5865F2);
+        .setColor(0x5865f2);
 
       await interaction.editReply({ embeds: [embed] });
       return;
@@ -39,9 +39,9 @@ export async function handleMyFacesCommand(
     const embed = new EmbedBuilder()
       .setTitle(`💾 Your Saved Faces (${faces.length}/3)`)
       .setDescription(
-        "Here are all your saved faces. Use the IDs with `/settings default_face` or in GIF search."
+        "Here are all your saved faces. Use the IDs with `/settings default_face` or in GIF search.",
       )
-      .setColor(0x5865F2);
+      .setColor(0x5865f2);
 
     // Add fields for each face
     faces.forEach((face, index) => {
@@ -73,4 +73,3 @@ export async function handleMyFacesCommand(
     });
   }
 }
-

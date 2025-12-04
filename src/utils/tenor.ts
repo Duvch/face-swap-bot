@@ -59,7 +59,7 @@ interface TenorSearchResponse {
 export async function searchGifs(
   query: string,
   limit: number = 50,
-  pos?: string
+  pos?: string,
 ): Promise<{ gifs: TenorGif[]; next?: string }> {
   if (!tenorApiKey) {
     throw new Error("Tenor API not initialized. Call initializeTenor first.");
@@ -86,7 +86,9 @@ export async function searchGifs(
     const response = await fetch(url);
 
     if (!response.ok) {
-      throw new Error(`Tenor API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Tenor API error: ${response.status} ${response.statusText}`,
+      );
     }
 
     const data = (await response.json()) as TenorSearchResponse;
@@ -137,4 +139,3 @@ export async function validateTenorKey(): Promise<boolean> {
     return false;
   }
 }
-

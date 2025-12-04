@@ -45,4 +45,3 @@ export interface StateUpdateResult {
   success: boolean;
   error?: string;
 }
-

@@ -16,54 +16,88 @@ const MAX_FACES_PER_USER = 3;
 /**
  * Get all saved faces for a user
  */
-export function getUserFaces(userId: string): SavedFace[] {
+export async function getUserFaces(userId: string): Promise<SavedFace[]> {
   const db = getDatabase();
-  const stmt = db.prepare(
-    "SELECT * FROM saved_faces WHERE user_id = ? ORDER BY uploaded_at DESC"
-  );
-  return stmt.all(userId) as SavedFace[];
+  const faces = await db.savedFace.findMany({
+    where: { userId },
+    orderBy: { uploadedAt: "desc" },
+  });
+
+  // Convert BigInt to number for compatibility
+  return faces.map((face) => ({
+    id: face.id,
+    user_id: face.userId,
+    name: face.name,
+    magic_hour_path: face.magicHourPath,
+    thumbnail_url: face.thumbnailUrl,
+    uploaded_at: Number(face.uploadedAt),
+    usage_count: face.usageCount,
+  }));
 }
 
 /**
  * Get a specific saved face by ID
  */
-export function getFaceById(faceId: string, userId: string): SavedFace | null {
+export async function getFaceById(
+  faceId: string,
+  userId: string
+): Promise<SavedFace | null> {
   const db = getDatabase();
-  const stmt = db.prepare(
-    "SELECT * FROM saved_faces WHERE id = ? AND user_id = ?"
-  );
-  const face = stmt.get(faceId, userId) as SavedFace | undefined;
-  return face || null;
+  const face = await db.savedFace.findUnique({
+    where: {
+      id: faceId,
+    },
+  });
+
+  if (!face || face.userId !== userId) {
+    return null;
+  }
+
+  return {
+    id: face.id,
+    user_id: face.userId,
+    name: face.name,
+    magic_hour_path: face.magicHourPath,
+    thumbnail_url: face.thumbnailUrl,
+    uploaded_at: Number(face.uploadedAt),
+    usage_count: face.usageCount,
+  };
 }
 
 /**
  * Save a new face for a user
  * @returns The saved face or null if limit reached
  */
-export function saveFace(
+export async function saveFace(
   userId: string,
   name: string,
   magicHourPath: string,
   thumbnailUrl?: string
-): SavedFace | null {
+): Promise<SavedFace | null> {
   const db = getDatabase();
 
   // Check if user has reached limit
-  const existingFaces = getUserFaces(userId);
+  const existingFaces = await getUserFaces(userId);
   if (existingFaces.length >= MAX_FACES_PER_USER) {
     return null; // Limit reached
   }
 
   // Generate unique ID
   const faceId = `face_${userId}_${Date.now()}`;
+  const now = BigInt(Date.now());
 
   // Insert new face
-  const stmt = db.prepare(`
-    INSERT INTO saved_faces (id, user_id, name, magic_hour_path, thumbnail_url, uploaded_at, usage_count)
-    VALUES (?, ?, ?, ?, ?, ?, 0)
-  `);
-
-  stmt.run(faceId, userId, name, magicHourPath, thumbnailUrl || null, Date.now());
+  const face = await db.savedFace.create({
+    data: {
+      id: faceId,
+      userId,
+      name,
+      magicHourPath,
+      thumbnailUrl: thumbnailUrl || null,
+      uploadedAt: now,
+      usageCount: 0,
+    },
+  });
 
   logger.info("FaceStorage", "Saved face for user", {
     userId,
@@ -71,67 +105,118 @@ export function saveFace(
     faceId,
   });
 
-  return getFaceById(faceId, userId);
+  return {
+    id: face.id,
+    user_id: face.userId,
+    name: face.name,
+    magic_hour_path: face.magicHourPath,
+    thumbnail_url: face.thumbnailUrl,
+    uploaded_at: Number(face.uploadedAt),
+    usage_count: face.usageCount,
+  };
 }
 
 /**
  * Delete a saved face
  */
-export function deleteFace(faceId: string, userId: string): boolean {
+export async function deleteFace(
+  faceId: string,
+  userId: string
+): Promise<boolean> {
   const db = getDatabase();
-  const stmt = db.prepare(
-    "DELETE FROM saved_faces WHERE id = ? AND user_id = ?"
-  );
-  const result = stmt.run(faceId, userId);
 
-  if (result.changes > 0) {
-    logger.info("FaceStorage", "Deleted face for user", { faceId, userId });
-    return true;
+  try {
+    const result = await db.savedFace.deleteMany({
+      where: {
+        id: faceId,
+        userId: userId,
+      },
+    });
+
+    if (result.count > 0) {
+      logger.info("FaceStorage", "Deleted face for user", { faceId, userId });
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    logger.error(
+      "FaceStorage",
+      "Error deleting face",
+      { faceId, userId },
+      error as Error
+    );
+    return false;
   }
-
-  return false;
 }
 
 /**
  * Increment usage count for a face
  */
-export function incrementFaceUsage(faceId: string, userId: string): void {
+export async function incrementFaceUsage(
+  faceId: string,
+  userId: string
+): Promise<void> {
   const db = getDatabase();
-  const stmt = db.prepare(
-    "UPDATE saved_faces SET usage_count = usage_count + 1 WHERE id = ? AND user_id = ?"
-  );
-  stmt.run(faceId, userId);
+
+  await db.savedFace.updateMany({
+    where: {
+      id: faceId,
+      userId: userId,
+    },
+    data: {
+      usageCount: {
+        increment: 1,
+      },
+    },
+  });
 }
 
 /**
  * Check if user can save more faces
  */
-export function canSaveMoreFaces(userId: string): boolean {
-  const faces = getUserFaces(userId);
+export async function canSaveMoreFaces(userId: string): Promise<boolean> {
+  const faces = await getUserFaces(userId);
   return faces.length < MAX_FACES_PER_USER;
 }
 
 /**
  * Get remaining face slots for user
  */
-export function getRemainingFaceSlots(userId: string): number {
-  const faces = getUserFaces(userId);
+export async function getRemainingFaceSlots(userId: string): Promise<number> {
+  const faces = await getUserFaces(userId);
   return Math.max(0, MAX_FACES_PER_USER - faces.length);
 }
 
 /**
  * Update face name
  */
-export function updateFaceName(
+export async function updateFaceName(
   faceId: string,
   userId: string,
   newName: string
-): boolean {
+): Promise<boolean> {
   const db = getDatabase();
-  const stmt = db.prepare(
-    "UPDATE saved_faces SET name = ? WHERE id = ? AND user_id = ?"
-  );
-  const result = stmt.run(newName, faceId, userId);
-  return result.changes > 0;
-}
 
+  try {
+    const result = await db.savedFace.updateMany({
+      where: {
+        id: faceId,
+        userId: userId,
+      },
+      data: {
+        name: newName,
+      },
+    });
+
+    return result.count > 0;
+  } catch (error) {
+    logger.error(
+      "FaceStorage",
+      "Error updating face name",
+      { faceId, userId },
+      error as Error
+    );
+    return false;
+  }
+}

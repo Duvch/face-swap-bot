@@ -45,7 +45,7 @@ for (const envVar of requiredEnvVars) {
     });
     logger.error(
       "Startup",
-      "Please check your .env file and ensure all variables are set."
+      "Please check your .env file and ensure all variables are set.",
     );
     process.exit(1);
   }
@@ -60,7 +60,7 @@ initializeMagicHour(process.env.MAGIC_HOUR_API_KEY!);
 // Initialize Tenor API client
 initializeTenor(
   process.env.TENOR_API_KEY!,
-  process.env.TENOR_CLIENT_KEY || "discord-face-swap-bot"
+  process.env.TENOR_CLIENT_KEY || "discord-face-swap-bot",
 );
 
 // Create Discord client
@@ -83,13 +83,13 @@ const server = http.createServer(
           status: "ok",
           service: "discord-face-swap-bot",
           timestamp: new Date().toISOString(),
-        })
+        }),
       );
     } else {
       res.writeHead(404, { "Content-Type": "text/plain" });
       res.end("Not Found");
     }
-  }
+  },
 );
 
 // Start HTTP server on PORT (required for Render)
@@ -158,7 +158,7 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
       "CommandHandler",
       "Error handling interaction",
       null,
-      error as Error
+      error as Error,
     );
 
     // Send error message to user
@@ -181,7 +181,7 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
         "CommandHandler",
         "Error sending error follow-up message",
         null,
-        replyError as Error
+        replyError as Error,
       );
     }
   }
@@ -196,29 +196,29 @@ process.on("unhandledRejection", (error) => {
   logger.error("Process", "Unhandled promise rejection", null, error as Error);
 });
 
-process.on("uncaughtException", (error) => {
+process.on("uncaughtException", async (error) => {
   logger.error("Process", "Uncaught exception", null, error);
-  closeDatabase();
+  await closeDatabase();
   process.exit(1);
 });
 
 // Graceful shutdown
-process.on("SIGINT", () => {
+process.on("SIGINT", async () => {
   logger.warn("Process", "Received SIGINT. Shutting down gracefully...");
   server.close(() => {
     logger.info("Server", "HTTP server closed");
   });
-  closeDatabase();
+  await closeDatabase();
   client.destroy();
   process.exit(0);
 });
 
-process.on("SIGTERM", () => {
+process.on("SIGTERM", async () => {
   logger.warn("Process", "Received SIGTERM. Shutting down gracefully...");
   server.close(() => {
     logger.info("Server", "HTTP server closed");
   });
-  closeDatabase();
+  await closeDatabase();
   client.destroy();
   process.exit(0);
 });
@@ -228,12 +228,12 @@ process.on("SIGTERM", () => {
   logger.info("Startup", "Validating APIs");
   const apisValid = await validateAllAPIs(
     process.env.MAGIC_HOUR_API_KEY!,
-    process.env.TENOR_API_KEY!
+    process.env.TENOR_API_KEY!,
   );
 
   if (!apisValid) {
     logger.error("Startup", "API validation failed. Bot will not start.");
-    closeDatabase();
+    await closeDatabase();
     process.exit(1);
   }
 
@@ -242,15 +242,15 @@ process.on("SIGTERM", () => {
   logger.info("Startup", "State cleanup timer started");
 
   // Run database cleanup on startup
-  runCleanup();
+  await runCleanup();
 
   // Login to Discord
   logger.info("Startup", "Starting Discord Face Swap Bot");
   logger.info("Startup", "Logging in to Discord");
 
-  client.login(process.env.DISCORD_BOT_TOKEN).catch((error) => {
+  client.login(process.env.DISCORD_BOT_TOKEN).catch(async (error) => {
     logger.error("Startup", "Failed to login to Discord", null, error);
-    closeDatabase();
+    await closeDatabase();
     process.exit(1);
   });
 })();

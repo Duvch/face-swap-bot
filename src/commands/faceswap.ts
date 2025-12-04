@@ -22,13 +22,13 @@ export const faceSwapCommandData = new SlashCommandBuilder()
     option
       .setName("source_face")
       .setDescription("Image containing the face you want to use")
-      .setRequired(true)
+      .setRequired(true),
   )
   .addAttachmentOption((option) =>
     option
       .setName("target_image")
       .setDescription("Image where the face will be swapped")
-      .setRequired(true)
+      .setRequired(true),
   );
 
 /**
@@ -45,11 +45,11 @@ const CONTEXT = "FaceSwapCommand";
  * Handle the /faceswap command
  */
 export async function handleFaceSwapCommand(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   // Check rate limit
   const userId = interaction.user.id;
-  const rateLimitError = checkRateLimit(userId, "faceswap");
+  const rateLimitError = await checkRateLimit(userId, "faceswap");
   if (rateLimitError) {
     await interaction.reply({
       content: rateLimitError,
@@ -63,15 +63,22 @@ export async function handleFaceSwapCommand(
 
   try {
     // Record action for rate limiting
-    recordAction(userId, "faceswap");
+    await recordAction(userId, "faceswap");
     // Get attachments from command options
-    const sourceFaceAttachment = interaction.options.getAttachment("source_face", true);
-    const targetImageAttachment = interaction.options.getAttachment("target_image", true);
+    const sourceFaceAttachment = interaction.options.getAttachment(
+      "source_face",
+      true,
+    );
+    const targetImageAttachment = interaction.options.getAttachment(
+      "target_image",
+      true,
+    );
 
     // Validate attachments exist
     if (!sourceFaceAttachment || !targetImageAttachment) {
       await interaction.editReply({
-        content: "❌ Both images are required. Please upload a source face and a target image.",
+        content:
+          "❌ Both images are required. Please upload a source face and a target image.",
       });
       return;
     }
@@ -95,9 +102,13 @@ export async function handleFaceSwapCommand(
 
     // Validate file sizes (Discord has max 25MB for attachments by default)
     const maxSize = 25 * 1024 * 1024; // 25MB in bytes
-    if (sourceFaceAttachment.size > maxSize || targetImageAttachment.size > maxSize) {
+    if (
+      sourceFaceAttachment.size > maxSize ||
+      targetImageAttachment.size > maxSize
+    ) {
       await interaction.editReply({
-        content: "❌ Image files are too large. Please upload images smaller than 25MB.",
+        content:
+          "❌ Image files are too large. Please upload images smaller than 25MB.",
       });
       return;
     }
@@ -120,16 +131,24 @@ export async function handleFaceSwapCommand(
     logger.debug(CONTEXT, "Downloading source face from Discord");
     const sourceFaceResponse = await fetch(sourceFaceAttachment.url);
     if (!sourceFaceResponse.ok) {
-      throw new Error(`Failed to download source image: ${sourceFaceResponse.statusText}`);
+      throw new Error(
+        `Failed to download source image: ${sourceFaceResponse.statusText}`,
+      );
     }
-    const sourceFaceBuffer = Buffer.from(await sourceFaceResponse.arrayBuffer());
+    const sourceFaceBuffer = Buffer.from(
+      await sourceFaceResponse.arrayBuffer(),
+    );
 
     logger.debug(CONTEXT, "Downloading target image from Discord");
     const targetImageResponse = await fetch(targetImageAttachment.url);
     if (!targetImageResponse.ok) {
-      throw new Error(`Failed to download target image: ${targetImageResponse.statusText}`);
+      throw new Error(
+        `Failed to download target image: ${targetImageResponse.statusText}`,
+      );
     }
-    const targetImageBuffer = Buffer.from(await targetImageResponse.arrayBuffer());
+    const targetImageBuffer = Buffer.from(
+      await targetImageResponse.arrayBuffer(),
+    );
 
     // Upload to Magic Hour storage
     await interaction.editReply({
@@ -138,8 +157,14 @@ export async function handleFaceSwapCommand(
 
     logger.debug(CONTEXT, "Uploading images to Magic Hour storage");
     const [sourcePath, targetPath] = await Promise.all([
-      uploadToMagicHour(sourceFaceBuffer, getFileExtension(sourceFaceAttachment.name)),
-      uploadToMagicHour(targetImageBuffer, getFileExtension(targetImageAttachment.name)),
+      uploadToMagicHour(
+        sourceFaceBuffer,
+        getFileExtension(sourceFaceAttachment.name),
+      ),
+      uploadToMagicHour(
+        targetImageBuffer,
+        getFileExtension(targetImageAttachment.name),
+      ),
     ]);
 
     logger.info(CONTEXT, "Files uploaded to Magic Hour", {
@@ -160,7 +185,7 @@ export async function handleFaceSwapCommand(
       url: result.downloadUrl,
     });
     const response = await fetch(result.downloadUrl);
-    
+
     if (!response.ok) {
       throw new Error(`Failed to download result: ${response.statusText}`);
     }
@@ -175,9 +200,15 @@ export async function handleFaceSwapCommand(
     // Track in history
     const db = getDatabase();
     const swapId = `swap_${userId}_${Date.now()}`;
-    db.prepare(
-      "INSERT INTO swap_history (id, user_id, swap_type, credits_used, created_at) VALUES (?, ?, ?, ?, ?)"
-    ).run(swapId, userId, "image", result.creditsCharged, Date.now());
+    await db.swapHistory.create({
+      data: {
+        id: swapId,
+        userId: userId,
+        swapType: "image",
+        creditsUsed: result.creditsCharged,
+        createdAt: BigInt(Date.now()),
+      },
+    });
 
     // Send the result to the user
     await interaction.editReply({
@@ -202,5 +233,3 @@ export async function handleFaceSwapCommand(
     });
   }
 }
-
-

@@ -17,14 +17,14 @@ export const savemyfaceCommandData = new SlashCommandBuilder()
     option
       .setName("name")
       .setDescription("Name for your saved face (e.g., 'Profile Pic')")
-      .setRequired(true)
+      .setRequired(true),
   );
 
 /**
  * Handle the /savemyface command
  */
 export async function handleSaveMyFaceCommand(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
 
@@ -34,7 +34,7 @@ export async function handleSaveMyFaceCommand(
     const faceName = interaction.options.getString("name", true);
 
     // Check if user can save more faces
-    if (!canSaveMoreFaces(userId)) {
+    if (!(await canSaveMoreFaces(userId))) {
       await interaction.editReply({
         content:
           "❌ You've reached the limit of 3 saved faces. Delete one with `/deletemyface` first.",
@@ -48,7 +48,7 @@ export async function handleSaveMyFaceCommand(
       .setDescription(
         `Please upload your face image as an attachment in your next message.\n\n` +
           `**Name:** ${faceName}\n` +
-          `**Remaining slots:** ${3 - getUserFaces(userId).length}`
+          `**Remaining slots:** ${3 - (await getUserFaces(userId)).length}`,
       )
       .setColor(0x5865f2)
       .setFooter({ text: "You have 5 minutes to upload your image" });
@@ -92,15 +92,15 @@ export async function handleSaveMyFaceCommand(
 
         const magicHourPath = await uploadToMagicHour(
           buffer,
-          attachment.name?.split(".").pop() || "jpg"
+          attachment.name?.split(".").pop() || "jpg",
         );
 
         // Save face
-        const savedFace = saveFace(
+        const savedFace = await saveFace(
           userId,
           faceName,
           magicHourPath,
-          attachment.url // Use Discord URL as thumbnail
+          attachment.url, // Use Discord URL as thumbnail
         );
 
         if (!savedFace) {
@@ -112,7 +112,7 @@ export async function handleSaveMyFaceCommand(
           .setDescription(
             `Your face **"${faceName}"** has been saved successfully!\n\n` +
               `**ID:** \`${savedFace.id}\`\n` +
-              `Use this ID with \`/settings default_face\` or in GIF search.`
+              `Use this ID with \`/settings default_face\` or in GIF search.`,
           )
           .setThumbnail(attachment.url)
           .setColor(0x00ff00);
@@ -123,7 +123,7 @@ export async function handleSaveMyFaceCommand(
           "SaveMyFaceCommand",
           "Error saving face",
           { userId, faceName },
-          error
+          error,
         );
         await interaction.editReply({
           content: `❌ Error saving face: ${error.message}`,
@@ -139,7 +139,12 @@ export async function handleSaveMyFaceCommand(
       }
     });
   } catch (error: any) {
-    logger.error("SaveMyFaceCommand", "Error in /savemyface", { userId }, error);
+    logger.error(
+      "SaveMyFaceCommand",
+      "Error in /savemyface",
+      { userId },
+      error,
+    );
     await interaction.editReply({
       content: `❌ Error: ${error.message}`,
     });

@@ -19,7 +19,7 @@ export function initializeMagicHour(apiKey: string): void {
 function getClient(): Client {
   if (!client) {
     throw new Error(
-      "Magic Hour client not initialized. Call initializeMagicHour first."
+      "Magic Hour client not initialized. Call initializeMagicHour first.",
     );
   }
   return client;
@@ -33,7 +33,7 @@ function getClient(): Client {
  */
 export async function swapFaces(
   sourceFacePath: string,
-  targetImagePath: string
+  targetImagePath: string,
 ): Promise<FaceSwapResult> {
   const magicHourClient = getClient();
 
@@ -125,7 +125,7 @@ export async function swapFaces(
 export async function swapFacesInVideo(
   sourceFacePath: string,
   videoPath: string,
-  maxDuration: number = 20
+  maxDuration: number = 20,
 ): Promise<FaceSwapResult> {
   const magicHourClient = getClient();
 
@@ -247,7 +247,7 @@ export function isValidVideoUrl(url: string): boolean {
  */
 export async function uploadToMagicHour(
   fileBuffer: Buffer,
-  extension: string
+  extension: string,
 ): Promise<string> {
   const magicHourClient = getClient();
 
@@ -256,7 +256,7 @@ export async function uploadToMagicHour(
 
     // Determine file type based on extension
     const isVideo = ["gif", "mp4", "mov", "webm", "m4v"].includes(
-      extension.toLowerCase()
+      extension.toLowerCase(),
     );
     const fileType = isVideo ? "video" : "image";
 
@@ -296,7 +296,7 @@ export async function uploadToMagicHour(
       CONTEXT,
       "Error uploading to Magic Hour",
       { extension },
-      error
+      error,
     );
     throw new Error(`Failed to upload file: ${error.message}`);
   }

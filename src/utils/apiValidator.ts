@@ -28,7 +28,7 @@ async function validateMagicHourAPI(apiKey: string): Promise<boolean> {
       CONTEXT,
       "Magic Hour API validation failed",
       { message: error.message },
-      error
+      error,
     );
     return false;
   }
@@ -51,7 +51,7 @@ async function validateTenorAPI(apiKey: string): Promise<boolean> {
       CONTEXT,
       "Tenor API validation failed",
       { message: error.message },
-      error
+      error,
     );
     return false;
   }
@@ -62,7 +62,7 @@ async function validateTenorAPI(apiKey: string): Promise<boolean> {
  */
 export async function validateAllAPIs(
   magicHourKey: string,
-  tenorKey: string
+  tenorKey: string,
 ): Promise<boolean> {
   logger.info(CONTEXT, "Starting API validation");
 
@@ -72,7 +72,7 @@ export async function validateAllAPIs(
   if (!magicHourValid) {
     logger.error(
       CONTEXT,
-      "Magic Hour API validation failed. Please check your MAGIC_HOUR_API_KEY in .env"
+      "Magic Hour API validation failed. Please check your MAGIC_HOUR_API_KEY in .env",
     );
     return false;
   }
@@ -80,7 +80,7 @@ export async function validateAllAPIs(
   if (!tenorValid) {
     logger.error(
       CONTEXT,
-      "Tenor API validation failed. Please check your TENOR_API_KEY in .env"
+      "Tenor API validation failed. Please check your TENOR_API_KEY in .env",
     );
     return false;
   }

@@ -14,14 +14,14 @@ export const deletemyfaceCommandData = new SlashCommandBuilder()
     option
       .setName("id")
       .setDescription("Face ID from /myfaces")
-      .setRequired(true)
+      .setRequired(true),
   );
 
 /**
  * Handle the /deletemyface command
  */
 export async function handleDeleteMyFaceCommand(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
 
@@ -30,17 +30,16 @@ export async function handleDeleteMyFaceCommand(
     const faceId = interaction.options.getString("id", true);
 
     // Verify face exists and belongs to user
-    const face = getFaceById(faceId, userId);
+    const face = await getFaceById(faceId, userId);
     if (!face) {
       await interaction.editReply({
-        content:
-          "❌ Face not found. Use `/myfaces` to see your saved faces.",
+        content: "❌ Face not found. Use `/myfaces` to see your saved faces.",
       });
       return;
     }
 
     // Delete face
-    const deleted = deleteFace(faceId, userId);
+    const deleted = await deleteFace(faceId, userId);
     if (!deleted) {
       throw new Error("Failed to delete face");
     }
@@ -61,4 +60,3 @@ export async function handleDeleteMyFaceCommand(
     });
   }
 }
-

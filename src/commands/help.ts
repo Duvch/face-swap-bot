@@ -19,15 +19,15 @@ export const helpCommandData = new SlashCommandBuilder()
         { name: "gifsearch", value: "gifsearch" },
         { name: "myfaces", value: "myfaces" },
         { name: "savemyface", value: "savemyface" },
-        { name: "settings", value: "settings" }
-      )
+        { name: "settings", value: "settings" },
+      ),
   );
 
 /**
  * Handle the /help command
  */
 export async function handleHelpCommand(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const command = interaction.options.getString("command");
 
@@ -44,50 +44,55 @@ export async function handleHelpCommand(
  * Show general help
  */
 async function showGeneralHelp(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const embed = new EmbedBuilder()
     .setTitle("🤖 Face Swap Bot - Help")
     .setDescription(
       "A Discord bot that swaps faces in images and GIFs using AI!\n\n" +
-      "**Quick Start:**\n" +
-      "1. Use `/gifsearch` to browse GIFs\n" +
-      "2. Select a GIF and upload your face\n" +
-      "3. Get your face-swapped result!\n\n" +
-      "**Or use direct commands:**\n" +
-      "• `/faceswap` - Swap faces in static images\n" +
-      "• `/faceswapgif` - Swap faces in GIFs/videos\n" +
-      "• `/gifsearch` - Browse and search GIFs from Tenor"
+        "**Quick Start:**\n" +
+        "1. Use `/gifsearch` to browse GIFs\n" +
+        "2. Select a GIF and upload your face\n" +
+        "3. Get your face-swapped result!\n\n" +
+        "**Or use direct commands:**\n" +
+        "• `/faceswap` - Swap faces in static images\n" +
+        "• `/faceswapgif` - Swap faces in GIFs/videos\n" +
+        "• `/gifsearch` - Browse and search GIFs from Tenor",
     )
     .addFields(
       {
         name: "📸 Image Face Swap",
-        value: "`/faceswap source_face:[image] target_image:[image]`\n" +
+        value:
+          "`/faceswap source_face:[image] target_image:[image]`\n" +
           "Swap faces between two static images. Fast and simple!",
         inline: false,
       },
       {
         name: "🎬 GIF Face Swap",
-        value: "`/faceswapgif source_face:[image] target_gif:[gif]`\n" +
+        value:
+          "`/faceswapgif source_face:[image] target_gif:[gif]`\n" +
           "Swap faces in animated GIFs. Returns MP4 or GIF format.",
         inline: false,
       },
       {
         name: "🔍 GIF Search (Recommended!)",
-        value: "`/gifsearch query:[search term]`\n" +
+        value:
+          "`/gifsearch query:[search term]`\n" +
           "Browse thousands of GIFs, select one, upload your face, done!",
         inline: false,
       },
       {
         name: "💾 Saved Faces",
-        value: "`/myfaces` - View your saved faces\n" +
+        value:
+          "`/myfaces` - View your saved faces\n" +
           "`/savemyface name:[name]` - Save a new face (max 3)\n" +
           "`/deletemyface id:[face_id]` - Delete a saved face",
         inline: false,
       },
       {
         name: "⚙️ Settings",
-        value: "`/settings` - Manage your preferences\n" +
+        value:
+          "`/settings` - Manage your preferences\n" +
           "Set default face, auto-save, and more!",
         inline: false,
       },
@@ -100,9 +105,9 @@ async function showGeneralHelp(
           "• GIF swaps cost more based on duration\n" +
           "• Save your faces to reuse them quickly!",
         inline: false,
-      }
+      },
     )
-    .setColor(0x5865F2)
+    .setColor(0x5865f2)
     .setFooter({
       text: "Use /help [command] for detailed help on a specific command",
     });
@@ -115,7 +120,7 @@ async function showGeneralHelp(
  */
 async function showCommandHelp(
   interaction: ChatInputCommandInteraction,
-  command: string
+  command: string,
 ): Promise<void> {
   let embed: EmbedBuilder;
 
@@ -137,7 +142,8 @@ async function showCommandHelp(
           },
           {
             name: "Example",
-            value: "`/faceswap source_face:[selfie.jpg] target_image:[poster.jpg]`",
+            value:
+              "`/faceswap source_face:[selfie.jpg] target_image:[poster.jpg]`",
           },
           {
             name: "Cost",
@@ -146,9 +152,9 @@ async function showCommandHelp(
           {
             name: "Processing Time",
             value: "10-30 seconds",
-          }
+          },
         )
-        .setColor(0x5865F2);
+        .setColor(0x5865f2);
       break;
 
     case "faceswapgif":
@@ -184,16 +190,16 @@ async function showCommandHelp(
           {
             name: "Output",
             value: "MP4 or GIF format (automatically detected)",
-          }
+          },
         )
-        .setColor(0x5865F2);
+        .setColor(0x5865f2);
       break;
 
     case "gifsearch":
       embed = new EmbedBuilder()
         .setTitle("🔍 /gifsearch - Interactive GIF Search")
         .setDescription(
-          "Search and browse thousands of GIFs from Tenor, then swap faces!"
+          "Search and browse thousands of GIFs from Tenor, then swap faces!",
         )
         .addFields(
           {
@@ -219,10 +225,11 @@ async function showCommandHelp(
           },
           {
             name: "Privacy",
-            value: "Search and selection are private (ephemeral). Only the final result is public!",
-          }
+            value:
+              "Search and selection are private (ephemeral). Only the final result is public!",
+          },
         )
-        .setColor(0x5865F2);
+        .setColor(0x5865f2);
       break;
 
     case "myfaces":
@@ -245,9 +252,9 @@ async function showCommandHelp(
           {
             name: "Limit",
             value: "Maximum 3 saved faces per user",
-          }
+          },
         )
-        .setColor(0x5865F2);
+        .setColor(0x5865f2);
       break;
 
     case "savemyface":
@@ -278,9 +285,9 @@ async function showCommandHelp(
           {
             name: "Limit",
             value: "Maximum 3 saved faces per user",
-          }
+          },
         )
-        .setColor(0x5865F2);
+        .setColor(0x5865f2);
       break;
 
     case "settings":
@@ -302,18 +309,17 @@ async function showCommandHelp(
               "• `default_face` - Face to use by default in GIF search\n" +
               "• `auto_save` - Automatically save new faces\n" +
               "• `max_duration` - Maximum GIF duration (1-30 seconds)",
-          }
+          },
         )
-        .setColor(0x5865F2);
+        .setColor(0x5865f2);
       break;
 
     default:
       embed = new EmbedBuilder()
         .setTitle("❌ Unknown Command")
         .setDescription(`No help available for command: ${command}`)
-        .setColor(0xFF0000);
+        .setColor(0xff0000);
   }
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
 }
-

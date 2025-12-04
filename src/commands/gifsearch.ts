@@ -19,7 +19,7 @@ export const gifSearchCommandData = new SlashCommandBuilder()
     option
       .setName("query")
       .setDescription("Search term (e.g., funny cat, excited)")
-      .setRequired(true)
+      .setRequired(true),
   );
 
 /**
@@ -29,7 +29,7 @@ export function buildGifSelectionUI(
   searchId: string,
   gifs: any[],
   currentPage: number,
-  totalPages: number
+  totalPages: number,
 ) {
   const rows: ActionRowBuilder<ButtonBuilder>[] = [];
 
@@ -47,7 +47,7 @@ export function buildGifSelectionUI(
             .setCustomId(`gif_select_${searchId}_${index}`)
             .setLabel(`Select GIF ${index + 1}`)
             .setStyle(ButtonStyle.Primary)
-            .setEmoji("🎬")
+            .setEmoji("🎬"),
         );
       } else {
         // Empty slot - disabled button
@@ -56,7 +56,7 @@ export function buildGifSelectionUI(
             .setCustomId(`gif_empty_${index}`)
             .setLabel(`-`)
             .setStyle(ButtonStyle.Secondary)
-            .setDisabled(true)
+            .setDisabled(true),
         );
       }
     }
@@ -72,7 +72,7 @@ export function buildGifSelectionUI(
       .setCustomId(`gif_prev_${searchId}`)
       .setLabel("◀️ Previous")
       .setStyle(ButtonStyle.Secondary)
-      .setDisabled(currentPage === 0)
+      .setDisabled(currentPage === 0),
   );
 
   navRow.addComponents(
@@ -80,7 +80,7 @@ export function buildGifSelectionUI(
       .setCustomId(`gif_page_${searchId}`)
       .setLabel(`Page ${currentPage + 1}/${totalPages}`)
       .setStyle(ButtonStyle.Secondary)
-      .setDisabled(true)
+      .setDisabled(true),
   );
 
   navRow.addComponents(
@@ -88,7 +88,7 @@ export function buildGifSelectionUI(
       .setCustomId(`gif_next_${searchId}`)
       .setLabel("Next ▶️")
       .setStyle(ButtonStyle.Secondary)
-      .setDisabled(currentPage >= totalPages - 1)
+      .setDisabled(currentPage >= totalPages - 1),
   );
 
   rows.push(navRow);
@@ -99,7 +99,7 @@ export function buildGifSelectionUI(
     new ButtonBuilder()
       .setCustomId(`gif_cancel_${searchId}`)
       .setLabel("❌ Cancel")
-      .setStyle(ButtonStyle.Danger)
+      .setStyle(ButtonStyle.Danger),
   );
 
   rows.push(cancelRow);
@@ -114,7 +114,7 @@ export function buildGifEmbeds(
   gifs: any[],
   query: string,
   currentPage: number,
-  totalPages: number
+  totalPages: number,
 ) {
   const embeds: EmbedBuilder[] = [];
 
@@ -122,7 +122,7 @@ export function buildGifEmbeds(
     .setTitle(`🔍 GIF Search Results for "${query}"`)
     .setDescription(
       `Found ${gifs.length} GIFs on this page. Click a button below to select a GIF!\n\n` +
-        `**Page ${currentPage + 1} of ${totalPages}**`
+        `**Page ${currentPage + 1} of ${totalPages}**`,
     )
     .setColor(0x00ae86)
     .setFooter({ text: "Powered by Tenor" });
@@ -150,11 +150,11 @@ export function buildGifEmbeds(
 const CONTEXT = "GifSearchCommand";
 
 export async function handleGifSearchCommand(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   // Check rate limit
   const userId = interaction.user.id;
-  const rateLimitError = checkRateLimit(userId, "gifsearch");
+  const rateLimitError = await checkRateLimit(userId, "gifsearch");
   if (rateLimitError) {
     await interaction.reply({
       content: rateLimitError,
@@ -167,7 +167,7 @@ export async function handleGifSearchCommand(
 
   try {
     // Record action for rate limiting
-    recordAction(userId, "gifsearch");
+    await recordAction(userId, "gifsearch");
 
     const query = interaction.options.getString("query", true);
 
@@ -198,7 +198,7 @@ export async function handleGifSearchCommand(
       query,
       searchResult.gifs,
       interaction.user.id,
-      interaction.channelId
+      interaction.channelId,
     );
 
     // Get first page of GIFs
@@ -209,13 +209,13 @@ export async function handleGifSearchCommand(
       currentGifs,
       query,
       state.currentPage,
-      state.totalPages
+      state.totalPages,
     );
     const components = buildGifSelectionUI(
       searchId,
       currentGifs,
       state.currentPage,
-      state.totalPages
+      state.totalPages,
     );
 
     await interaction.editReply({

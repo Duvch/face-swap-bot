@@ -23,13 +23,13 @@ export const faceSwapGifCommandData = new SlashCommandBuilder()
     option
       .setName("source_face")
       .setDescription("Image containing the face you want to use")
-      .setRequired(true)
+      .setRequired(true),
   )
   .addAttachmentOption((option) =>
     option
       .setName("target_gif")
       .setDescription("Animated GIF or video where the face will be swapped")
-      .setRequired(true)
+      .setRequired(true),
   )
   .addIntegerOption((option) =>
     option
@@ -37,7 +37,7 @@ export const faceSwapGifCommandData = new SlashCommandBuilder()
       .setDescription("Maximum duration in seconds (default: 20, max: 30)")
       .setMinValue(1)
       .setMaxValue(30)
-      .setRequired(false)
+      .setRequired(false),
   );
 
 /**
@@ -54,11 +54,11 @@ function getFileExtension(filename: string): string {
 const CONTEXT = "FaceSwapGifCommand";
 
 export async function handleFaceSwapGifCommand(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   // Check rate limit
   const userId = interaction.user.id;
-  const rateLimitError = checkRateLimit(userId, "faceswap");
+  const rateLimitError = await checkRateLimit(userId, "faceswap");
   if (rateLimitError) {
     await interaction.reply({
       content: rateLimitError,
@@ -72,15 +72,15 @@ export async function handleFaceSwapGifCommand(
 
   try {
     // Record action for rate limiting
-    recordAction(userId, "faceswap");
+    await recordAction(userId, "faceswap");
     // Get attachments from command options
     const sourceFaceAttachment = interaction.options.getAttachment(
       "source_face",
-      true
+      true,
     );
     const targetGifAttachment = interaction.options.getAttachment(
       "target_gif",
-      true
+      true,
     );
     const maxDuration = interaction.options.getInteger("max_duration") || 20;
 
@@ -144,18 +144,18 @@ export async function handleFaceSwapGifCommand(
     const sourceFaceResponse = await fetch(sourceFaceAttachment.url);
     if (!sourceFaceResponse.ok) {
       throw new Error(
-        `Failed to download source image: ${sourceFaceResponse.statusText}`
+        `Failed to download source image: ${sourceFaceResponse.statusText}`,
       );
     }
     const sourceFaceBuffer = Buffer.from(
-      await sourceFaceResponse.arrayBuffer()
+      await sourceFaceResponse.arrayBuffer(),
     );
 
     logger.debug(CONTEXT, "Downloading target GIF/video from Discord");
     const targetGifResponse = await fetch(targetGifAttachment.url);
     if (!targetGifResponse.ok) {
       throw new Error(
-        `Failed to download target GIF/video: ${targetGifResponse.statusText}`
+        `Failed to download target GIF/video: ${targetGifResponse.statusText}`,
       );
     }
     const targetGifBuffer = Buffer.from(await targetGifResponse.arrayBuffer());
@@ -169,11 +169,11 @@ export async function handleFaceSwapGifCommand(
     const [sourcePath, targetPath] = await Promise.all([
       uploadToMagicHour(
         sourceFaceBuffer,
-        getFileExtension(sourceFaceAttachment.name)
+        getFileExtension(sourceFaceAttachment.name),
       ),
       uploadToMagicHour(
         targetGifBuffer,
-        getFileExtension(targetGifAttachment.name)
+        getFileExtension(targetGifAttachment.name),
       ),
     ]);
 
@@ -217,9 +217,15 @@ export async function handleFaceSwapGifCommand(
     // Track in history
     const db = getDatabase();
     const swapId = `swap_${userId}_${Date.now()}`;
-    db.prepare(
-      "INSERT INTO swap_history (id, user_id, swap_type, credits_used, created_at) VALUES (?, ?, ?, ?, ?)"
-    ).run(swapId, userId, "gif", result.creditsCharged, Date.now());
+    await db.swapHistory.create({
+      data: {
+        id: swapId,
+        userId: userId,
+        swapType: "gif",
+        creditsUsed: result.creditsCharged,
+        createdAt: BigInt(Date.now()),
+      },
+    });
 
     // Send the result to the user
     await interaction.editReply({

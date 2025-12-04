@@ -27,7 +27,8 @@ class Logger {
   constructor() {
     // Read log level from environment (default to INFO)
     const envLevel = process.env.LOG_LEVEL?.toUpperCase() || "INFO";
-    this.currentLevel = LogLevel[envLevel as keyof typeof LogLevel] ?? LogLevel.INFO;
+    this.currentLevel =
+      LogLevel[envLevel as keyof typeof LogLevel] ?? LogLevel.INFO;
 
     // File logging configuration
     this.logToFile = process.env.LOG_TO_FILE === "true";
@@ -57,7 +58,7 @@ class Logger {
     level: string,
     context: string,
     message: string,
-    data?: any
+    data?: any,
   ): string {
     const timestamp = this.getTimestamp();
     const dataStr = data ? ` ${JSON.stringify(data)}` : "";
@@ -87,13 +88,18 @@ class Logger {
     context: string,
     message: string,
     data?: any,
-    error?: Error
+    error?: Error,
   ): void {
     if (level < this.currentLevel) {
       return; // Skip if below current log level
     }
 
-    const formattedMessage = this.formatMessage(levelName, context, message, data);
+    const formattedMessage = this.formatMessage(
+      levelName,
+      context,
+      message,
+      data,
+    );
 
     // Console output with colors
     const coloredOutput =
@@ -139,7 +145,15 @@ class Logger {
    * Error level logging
    */
   error(context: string, message: string, data?: any, error?: Error): void {
-    this.log(LogLevel.ERROR, "ERROR", colors.ERROR, context, message, data, error);
+    this.log(
+      LogLevel.ERROR,
+      "ERROR",
+      colors.ERROR,
+      context,
+      message,
+      data,
+      error,
+    );
   }
 
   /**
@@ -159,4 +173,3 @@ class Logger {
 
 // Export singleton instance
 export const logger = new Logger();
-

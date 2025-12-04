@@ -1,0 +1,61 @@
+// Prisma schema for Discord Face Swap Bot
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Saved faces for users
+model SavedFace {
+  id              String   @id
+  userId          String   @map("user_id")
+  name            String
+  magicHourPath   String   @map("magic_hour_path")
+  thumbnailUrl    String?  @map("thumbnail_url")
+  uploadedAt      BigInt   @map("uploaded_at")
+  usageCount      Int      @default(0) @map("usage_count")
+
+  @@index([userId])
+  @@map("saved_faces")
+}
+
+// Rate limiting data
+model RateLimit {
+  userId      String   @map("user_id")
+  actionType  String   @map("action_type")
+  timestamps  String   // JSON string of timestamp array
+  updatedAt   BigInt   @map("updated_at")
+
+  @@id([userId, actionType])
+  @@map("rate_limits")
+}
+
+// User preferences and settings
+model UserPreference {
+  userId          String   @id @map("user_id")
+  defaultFaceId   String?  @map("default_face_id")
+  autoSaveFaces   Boolean  @default(false) @map("auto_save_faces")
+  maxGifDuration  Int      @default(20) @map("max_gif_duration")
+  createdAt       BigInt   @map("created_at")
+  updatedAt       BigInt   @map("updated_at")
+
+  @@map("user_preferences")
+}
+
+// Swap history for analytics
+model SwapHistory {
+  id           String   @id
+  userId       String   @map("user_id")
+  swapType     String   @map("swap_type")
+  creditsUsed  Int      @map("credits_used")
+  createdAt    BigInt   @map("created_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("swap_history")
+}
+

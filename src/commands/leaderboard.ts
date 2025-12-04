@@ -15,9 +15,8 @@ export const leaderboardCommandData = new SlashCommandBuilder()
  * Check if user is admin
  */
 function isAdmin(userId: string): boolean {
-  const adminIds = process.env.ADMIN_USER_IDS?.split(",").map((id) =>
-    id.trim()
-  ) || [];
+  const adminIds =
+    process.env.ADMIN_USER_IDS?.split(",").map((id) => id.trim()) || [];
   return adminIds.includes(userId);
 }
 
@@ -25,7 +24,7 @@ function isAdmin(userId: string): boolean {
  * Handle the /leaderboard command
  */
 export async function handleLeaderboardCommand(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
 
@@ -43,9 +42,13 @@ export async function handleLeaderboardCommand(
     const db = getDatabase();
 
     // Get top 10 users by total swaps
-    const topUsers = db
-      .prepare(
-        `
+    const topUsers = await db.$queryRaw<
+      Array<{
+        user_id: string;
+        total_swaps: bigint;
+        total_credits: bigint;
+      }>
+    >`
       SELECT 
         user_id,
         COUNT(*) as total_swaps,
@@ -54,79 +57,79 @@ export async function handleLeaderboardCommand(
       GROUP BY user_id
       ORDER BY total_swaps DESC
       LIMIT 10
-    `
-      )
-      .all() as Array<{
-      user_id: string;
-      total_swaps: number;
-      total_credits: number;
-    }>;
+    `;
 
     if (topUsers.length === 0) {
       const embed = new EmbedBuilder()
         .setTitle("📊 Leaderboard")
         .setDescription("No swaps recorded yet!")
-        .setColor(0x5865F2);
+        .setColor(0x5865f2);
 
       await interaction.editReply({ embeds: [embed] });
       return;
     }
 
     // Get total stats
-    const totalStats = db
-      .prepare(
-        `
+    const totalStats = await db.$queryRaw<
+      Array<{
+        total_swaps: bigint;
+        total_credits: bigint;
+        unique_users: bigint;
+      }>
+    >`
       SELECT 
         COUNT(*) as total_swaps,
         SUM(credits_used) as total_credits,
         COUNT(DISTINCT user_id) as unique_users
       FROM swap_history
-    `
-      )
-      .get() as {
-      total_swaps: number;
-      total_credits: number;
-      unique_users: number;
-    };
+    `;
 
     // Get weekly stats
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const weeklyStats = db
-      .prepare(
-        `
+    const oneWeekAgo = BigInt(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const weeklyStats = await db.$queryRaw<
+      Array<{
+        weekly_swaps: bigint;
+        weekly_credits: bigint;
+      }>
+    >`
       SELECT 
         COUNT(*) as weekly_swaps,
         SUM(credits_used) as weekly_credits
       FROM swap_history
-      WHERE created_at > ?
-    `
-      )
-      .get(oneWeekAgo) as {
-      weekly_swaps: number;
-      weekly_credits: number;
+      WHERE created_at > ${oneWeekAgo}
+    `;
+
+    const totalStatsData = totalStats[0] || {
+      total_swaps: 0n,
+      total_credits: 0n,
+      unique_users: 0n,
+    };
+    const weeklyStatsData = weeklyStats[0] || {
+      weekly_swaps: 0n,
+      weekly_credits: 0n,
     };
 
     // Build leaderboard embed
     const embed = new EmbedBuilder()
       .setTitle("🏆 Face Swap Leaderboard")
       .setDescription("Top 10 users by total face swaps")
-      .setColor(0xFFD700)
+      .setColor(0xffd700)
       .addFields(
         {
           name: "📊 Overall Statistics",
           value:
-            `**Total Swaps:** ${totalStats.total_swaps}\n` +
-            `**Total Credits Used:** ${totalStats.total_credits.toLocaleString()}\n` +
-            `**Unique Users:** ${totalStats.unique_users}`,
+            `**Total Swaps:** ${totalStatsData.total_swaps}\n` +
+            `**Total Credits Used:** ${Number(totalStatsData.total_credits).toLocaleString()}\n` +
+            `**Unique Users:** ${totalStatsData.unique_users}`,
           inline: false,
         },
         {
           name: "📅 This Week",
           value:
-            `**Swaps:** ${weeklyStats.weekly_swaps || 0}\n` +
-            `**Credits:** ${(weeklyStats.weekly_credits || 0).toLocaleString()}`,
+            `**Swaps:** ${weeklyStatsData.weekly_swaps || 0n}\n` +
+            `**Credits:** ${Number(weeklyStatsData.weekly_credits || 0n).toLocaleString()}`,
           inline: false,
-        }
+        },
       );
 
     // Add top users
@@ -134,7 +137,7 @@ export async function handleLeaderboardCommand(
       .map((user, index) => {
         const medal =
           index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "  ";
-        return `${medal} **<@${user.user_id}>**\n   ${user.total_swaps} swaps • ${user.total_credits.toLocaleString()} credits`;
+        return `${medal} **<@${user.user_id}>**\n   ${user.total_swaps} swaps • ${Number(user.total_credits).toLocaleString()} credits`;
       })
       .join("\n\n");
 
@@ -156,4 +159,3 @@ export async function handleLeaderboardCommand(
     });
   }
 }
-
