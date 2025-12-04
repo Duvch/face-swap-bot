@@ -40,7 +40,7 @@ export async function getUserFaces(userId: string): Promise<SavedFace[]> {
  */
 export async function getFaceById(
   faceId: string,
-  userId: string
+  userId: string,
 ): Promise<SavedFace | null> {
   const db = getDatabase();
   const face = await db.savedFace.findUnique({
@@ -72,7 +72,7 @@ export async function saveFace(
   userId: string,
   name: string,
   magicHourPath: string,
-  thumbnailUrl?: string
+  thumbnailUrl?: string,
 ): Promise<SavedFace | null> {
   const db = getDatabase();
 
@@ -121,7 +121,7 @@ export async function saveFace(
  */
 export async function deleteFace(
   faceId: string,
-  userId: string
+  userId: string,
 ): Promise<boolean> {
   const db = getDatabase();
 
@@ -144,7 +144,7 @@ export async function deleteFace(
       "FaceStorage",
       "Error deleting face",
       { faceId, userId },
-      error as Error
+      error as Error,
     );
     return false;
   }
@@ -155,7 +155,7 @@ export async function deleteFace(
  */
 export async function incrementFaceUsage(
   faceId: string,
-  userId: string
+  userId: string,
 ): Promise<void> {
   const db = getDatabase();
 
@@ -194,7 +194,7 @@ export async function getRemainingFaceSlots(userId: string): Promise<number> {
 export async function updateFaceName(
   faceId: string,
   userId: string,
-  newName: string
+  newName: string,
 ): Promise<boolean> {
   const db = getDatabase();
 
@@ -215,7 +215,7 @@ export async function updateFaceName(
       "FaceStorage",
       "Error updating face name",
       { faceId, userId },
-      error as Error
+      error as Error,
     );
     return false;
   }

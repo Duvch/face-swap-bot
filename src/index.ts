@@ -27,6 +27,8 @@ import {
   runCleanup,
 } from "./utils/database";
 import { logger } from "./utils/logger";
+import { isEligibleForGifSwap } from "./utils/gifDetector";
+import { handleNativeGifMessage } from "./handlers/nativeGifHandler";
 
 // Load environment variables
 dotenv.config();
@@ -93,7 +95,7 @@ const server = http.createServer(
 );
 
 // Start HTTP server on PORT (required for Render)
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
   logger.info("Server", `HTTP server listening on port ${PORT}`);
 });
@@ -184,6 +186,23 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
         replyError as Error,
       );
     }
+  }
+});
+
+// Handle messages (for native GIF detection)
+client.on(Events.MessageCreate, async (message) => {
+  try {
+    // Check if message is eligible for native GIF face swap
+    if (isEligibleForGifSwap(message)) {
+      await handleNativeGifMessage(message);
+    }
+  } catch (error) {
+    logger.error(
+      "MessageHandler",
+      "Error handling message for GIF detection",
+      { messageId: message.id, userId: message.author?.id },
+      error as Error,
+    );
   }
 });
 

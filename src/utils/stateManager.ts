@@ -1,12 +1,27 @@
 import { SearchState, TenorGif, StateUpdateResult } from "../types";
 import { logger } from "./logger";
 
+// Native GIF state interface
+export interface NativeGifState {
+  id: string; // unique session ID
+  gifUrl: string; // URL to the GIF
+  userId: string; // user who posted the GIF
+  messageId: string; // original message ID
+  channelId: string; // channel ID
+  timestamp: number; // for cleanup
+  selectedFaceId?: string; // if user selected a saved face
+}
+
 // Store active GIF searches
 const activeSearches = new Map<string, SearchState>();
+
+// Store native GIF face swap sessions
+const nativeGifStates = new Map<string, NativeGifState>();
 
 // Cleanup interval (10 minutes)
 const CLEANUP_INTERVAL = 10 * 60 * 1000;
 const STATE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+const NATIVE_GIF_TIMEOUT = 5 * 60 * 1000; // 5 minutes for native GIF states
 
 const CONTEXT = "StateManager";
 
@@ -177,18 +192,34 @@ export function getCurrentPageGifs(state: SearchState): TenorGif[] {
  */
 export function cleanupExpiredStates(): void {
   const now = Date.now();
-  let cleaned = 0;
+  let cleanedSearches = 0;
+  let cleanedNativeGifs = 0;
 
+  // Clean up expired search states
   for (const [searchId, state] of activeSearches.entries()) {
     if (now - state.timestamp > STATE_TIMEOUT) {
       activeSearches.delete(searchId);
-      cleaned++;
+      cleanedSearches++;
     }
   }
 
-  if (cleaned > 0) {
+  // Clean up expired native GIF states
+  for (const [sessionId, state] of nativeGifStates.entries()) {
+    if (now - state.timestamp > NATIVE_GIF_TIMEOUT) {
+      nativeGifStates.delete(sessionId);
+      cleanedNativeGifs++;
+    }
+  }
+
+  if (cleanedSearches > 0) {
     logger.info(CONTEXT, "Cleaned up expired search states", {
-      count: cleaned,
+      count: cleanedSearches,
+    });
+  }
+
+  if (cleanedNativeGifs > 0) {
+    logger.info(CONTEXT, "Cleaned up expired native GIF states", {
+      count: cleanedNativeGifs,
     });
   }
 }
@@ -215,4 +246,106 @@ export function getActiveSearchCount(): number {
  */
 export function getAllSearchIds(): string[] {
   return Array.from(activeSearches.keys());
+}
+
+// ============================================================
+// Native GIF State Management
+// ============================================================
+
+/**
+ * Create a new native GIF state
+ */
+export function createNativeGifState(
+  gifUrl: string,
+  userId: string,
+  messageId: string,
+  channelId: string,
+): NativeGifState {
+  const sessionId = `native_${userId}_${Date.now()}`;
+
+  const state: NativeGifState = {
+    id: sessionId,
+    gifUrl,
+    userId,
+    messageId,
+    channelId,
+    timestamp: Date.now(),
+  };
+
+  nativeGifStates.set(sessionId, state);
+  logger.info(CONTEXT, "Native GIF state created", {
+    sessionId,
+    userId,
+    gifUrl: gifUrl.substring(0, 50) + "...",
+  });
+
+  return state;
+}
+
+/**
+ * Get native GIF state by ID
+ */
+export function getNativeGifState(
+  sessionId: string,
+): NativeGifState | undefined {
+  const state = nativeGifStates.get(sessionId);
+
+  if (state) {
+    logger.debug(CONTEXT, "Native GIF state retrieved", {
+      sessionId,
+      userId: state.userId,
+      hasSelectedFace: !!state.selectedFaceId,
+    });
+  } else {
+    logger.warn(CONTEXT, "Native GIF state not found", { sessionId });
+  }
+
+  return state;
+}
+
+/**
+ * Update native GIF state
+ */
+export function updateNativeGifState(
+  sessionId: string,
+  updates: Partial<NativeGifState>,
+): boolean {
+  const state = nativeGifStates.get(sessionId);
+  if (!state) {
+    logger.warn(CONTEXT, "Cannot update - native GIF state not found", {
+      sessionId,
+    });
+    return false;
+  }
+
+  Object.assign(state, updates, { timestamp: Date.now() });
+  nativeGifStates.set(sessionId, state);
+
+  logger.debug(CONTEXT, "Native GIF state updated", {
+    sessionId,
+    updatedFields: Object.keys(updates),
+  });
+
+  return true;
+}
+
+/**
+ * Delete native GIF state
+ */
+export function deleteNativeGifState(sessionId: string): void {
+  const existed = nativeGifStates.delete(sessionId);
+  if (existed) {
+    logger.info(CONTEXT, "Native GIF state deleted", { sessionId });
+  } else {
+    logger.warn(CONTEXT, "Attempted to delete non-existent native GIF state", {
+      sessionId,
+    });
+  }
+}
+
+/**
+ * Get total active native GIF sessions
+ */
+export function getActiveNativeGifCount(): number {
+  return nativeGifStates.size;
 }

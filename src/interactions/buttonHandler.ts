@@ -14,6 +14,9 @@ import {
   deleteSearchState,
   getCurrentPageGifs,
   getAllSearchIds,
+  getNativeGifState,
+  updateNativeGifState,
+  deleteNativeGifState,
 } from "../utils/stateManager";
 import { buildGifSelectionUI, buildGifEmbeds } from "../commands/gifsearch";
 import { getGifUrl } from "../utils/tenor";
@@ -94,6 +97,12 @@ export async function handleButtonInteraction(
     await handlePageNavigation(interaction, "prev");
   } else if (customId.startsWith("gif_cancel_")) {
     await handleSearchCancel(interaction);
+  } else if (customId.startsWith("native_gif_swap|")) {
+    await handleNativeGifSwapButton(interaction);
+  } else if (customId.startsWith("native_face_select|")) {
+    await handleNativeGifFaceSelect(interaction);
+  } else if (customId.startsWith("native_upload_face|")) {
+    await handleNativeGifFaceUpload(interaction);
   }
 }
 
@@ -1047,5 +1056,391 @@ async function processFaceSwap(
       content: `❌ Face swap failed: ${error.message}`,
     });
     deleteSearchState(searchId);
+  }
+}
+
+// ============================================================
+// Native GIF Face Swap Handlers
+// ============================================================
+
+/**
+ * Handle native GIF swap button click
+ * Shows face selection UI (saved faces + upload option)
+ */
+async function handleNativeGifSwapButton(
+  interaction: ButtonInteraction,
+): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+
+  // Parse: native_gif_swap|{sessionId}
+  const sessionId = interaction.customId.split("|")[1];
+  const userId = interaction.user.id;
+
+  logger.info(CONTEXT, "Native GIF swap button clicked", {
+    sessionId,
+    userId,
+  });
+
+  // Get state
+  const state = getNativeGifState(sessionId);
+  if (!state) {
+    await interaction.editReply({
+      content: "❌ Session expired. Please post the GIF again.",
+    });
+    return;
+  }
+
+  // Verify user
+  if (state.userId !== userId) {
+    await interaction.editReply({
+      content: "❌ You can only swap your own GIF!",
+    });
+    return;
+  }
+
+  // Get saved faces
+  const savedFaces = await getUserFaces(userId);
+  const prefs = await getUserPreferences(userId);
+
+  logger.debug(CONTEXT, "Showing face selection for native GIF", {
+    sessionId,
+    userId,
+    savedFacesCount: savedFaces.length,
+  });
+
+  // Build face selection UI
+  const faceButtons = buildNativeGifFaceSelectionUI(
+    savedFaces,
+    sessionId,
+    prefs.default_face_id,
+  );
+
+  // Show face selection
+  await interaction.editReply({
+    content: "✅ Choose a face for the swap:",
+    components: faceButtons,
+  });
+}
+
+/**
+ * Build face selection UI for native GIF
+ */
+function buildNativeGifFaceSelectionUI(
+  faces: any[],
+  sessionId: string,
+  defaultFaceId: string | null,
+): ActionRowBuilder<ButtonBuilder>[] {
+  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+
+  // Add saved face buttons
+  if (faces.length > 0) {
+    for (let i = 0; i < faces.length; i += 5) {
+      const row = new ActionRowBuilder<ButtonBuilder>();
+      const facesInRow = faces.slice(i, i + 5);
+
+      for (const face of facesInRow) {
+        const isDefault = face.id === defaultFaceId;
+        const button = new ButtonBuilder()
+          .setCustomId(`native_face_select|${sessionId}|${face.id}`)
+          .setLabel(`${isDefault ? "⭐ " : ""}${face.name}`)
+          .setStyle(isDefault ? ButtonStyle.Primary : ButtonStyle.Secondary);
+        row.addComponents(button);
+      }
+
+      rows.push(row);
+    }
+  }
+
+  // Add upload button
+  const uploadRow = new ActionRowBuilder<ButtonBuilder>();
+  uploadRow.addComponents(
+    new ButtonBuilder()
+      .setCustomId(`native_upload_face|${sessionId}`)
+      .setLabel("📤 Upload New Face")
+      .setStyle(ButtonStyle.Success),
+  );
+  rows.push(uploadRow);
+
+  return rows;
+}
+
+/**
+ * Handle saved face selection for native GIF
+ */
+async function handleNativeGifFaceSelect(
+  interaction: ButtonInteraction,
+): Promise<void> {
+  await interaction.deferUpdate();
+
+  // Parse: native_face_select|{sessionId}|{faceId}
+  const [, sessionId, faceId] = interaction.customId.split("|");
+  const userId = interaction.user.id;
+
+  logger.info(CONTEXT, "Native GIF face selected", {
+    sessionId,
+    faceId,
+    userId,
+  });
+
+  // Get state
+  const state = getNativeGifState(sessionId);
+  if (!state) {
+    await interaction.followUp({
+      content: "❌ Session expired. Please post the GIF again.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  // Get face
+  const face = await getUserFaces(userId);
+  const selectedFace = face.find((f) => f.id === faceId);
+  if (!selectedFace) {
+    await interaction.followUp({
+      content: "❌ Face not found.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  // Update state
+  updateNativeGifState(sessionId, { selectedFaceId: faceId });
+
+  // Start face swap
+  await processNativeGifFaceSwap(
+    interaction,
+    state,
+    selectedFace.magic_hour_path,
+  );
+
+  // Increment usage
+  await incrementFaceUsage(faceId, userId);
+}
+
+/**
+ * Handle face upload for native GIF
+ */
+async function handleNativeGifFaceUpload(
+  interaction: ButtonInteraction,
+): Promise<void> {
+  await interaction.deferUpdate();
+
+  // Parse: native_upload_face|{sessionId}
+  const sessionId = interaction.customId.split("|")[1];
+  const userId = interaction.user.id;
+
+  logger.info(CONTEXT, "Native GIF face upload requested", {
+    sessionId,
+    userId,
+  });
+
+  // Get state
+  const state = getNativeGifState(sessionId);
+  if (!state) {
+    await interaction.followUp({
+      content: "❌ Session expired. Please post the GIF again.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  // Prompt for upload
+  await interaction.editReply({
+    content:
+      "📤 **Upload Your Face**\n\nPlease upload an image containing a face in your next message in this channel.\n\nYou have 2 minutes.",
+    components: [],
+  });
+
+  // Wait for image upload
+  const channel = interaction.channel;
+  if (!channel || !channel.isTextBased() || channel.isDMBased()) {
+    await interaction.followUp({
+      content: "❌ Cannot collect messages in this channel.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  const collector = (channel as TextChannel).createMessageCollector({
+    filter: (m: Message) =>
+      m.author.id === userId &&
+      m.attachments.size > 0 &&
+      !!m.attachments.first()?.contentType?.startsWith("image/"),
+    time: 2 * 60 * 1000, // 2 minutes
+    max: 1,
+  });
+
+  collector.on("collect", async (message: Message) => {
+    const attachment = message.attachments.first();
+    if (!attachment) return;
+
+    try {
+      // Download image
+      const response = await fetch(attachment.url);
+      if (!response.ok) {
+        throw new Error("Failed to download image");
+      }
+      const buffer = Buffer.from(await response.arrayBuffer());
+
+      // Upload to Magic Hour
+      const facePath = await uploadToMagicHour(
+        buffer,
+        attachment.name?.split(".").pop() || "jpg",
+      );
+
+      // Start face swap
+      await processNativeGifFaceSwap(interaction, state, facePath);
+
+      // Delete user's upload message to keep channel clean
+      try {
+        await message.delete();
+      } catch {
+        // Ignore if can't delete
+      }
+    } catch (error: any) {
+      logger.error(
+        CONTEXT,
+        "Error processing uploaded face for native GIF",
+        { sessionId, userId },
+        error,
+      );
+      await interaction.followUp({
+        content: `❌ Error processing image: ${error.message}`,
+        ephemeral: true,
+      });
+    }
+  });
+
+  collector.on("end", (collected: any, reason: string) => {
+    if (collected.size === 0 && reason === "time") {
+      interaction.followUp({
+        content: "⏱️ Timeout! You didn't upload an image in time.",
+        ephemeral: true,
+      });
+    }
+  });
+}
+
+/**
+ * Process face swap for native GIF
+ */
+async function processNativeGifFaceSwap(
+  interaction: ButtonInteraction,
+  state: any,
+  facePath: string,
+): Promise<void> {
+  const userId = interaction.user.id;
+  const sessionId = state.id;
+
+  try {
+    // Update status
+    await interaction.editReply({
+      content: "🔄 Processing face swap... This may take a minute.",
+      components: [],
+    });
+
+    logger.info(CONTEXT, "Starting native GIF face swap", {
+      sessionId,
+      userId,
+      gifUrl: state.gifUrl.substring(0, 50) + "...",
+    });
+
+    // Download GIF
+    const gifResponse = await fetch(state.gifUrl);
+    if (!gifResponse.ok) {
+      throw new Error(`Failed to download GIF: ${gifResponse.statusText}`);
+    }
+    const gifBuffer = Buffer.from(await gifResponse.arrayBuffer());
+
+    // Upload GIF to Magic Hour
+    const gifPath = await uploadToMagicHour(gifBuffer, "gif");
+
+    // Get user preferences for max duration
+    const prefs = await getUserPreferences(userId);
+    const maxDuration = prefs.max_gif_duration || 20;
+
+    // Process face swap
+    const result = await swapFacesInVideo(facePath, gifPath, maxDuration);
+
+    logger.info(CONTEXT, "Native GIF face swap completed", {
+      sessionId,
+      creditsUsed: result.creditsCharged,
+    });
+
+    // Download result
+    const resultResponse = await fetch(result.downloadUrl);
+    if (!resultResponse.ok) {
+      throw new Error(
+        `Failed to download result: ${resultResponse.statusText}`,
+      );
+    }
+
+    const resultBuffer = Buffer.from(await resultResponse.arrayBuffer());
+
+    // Detect extension
+    const urlPath = new URL(result.downloadUrl).pathname;
+    const extension = urlPath.split(".").pop()?.toLowerCase() || "mp4";
+    const isGif = extension === "gif";
+
+    // Create attachment
+    const attachment = new AttachmentBuilder(resultBuffer, {
+      name: `faceswap_${Date.now()}.${extension}`,
+    });
+
+    // Track in history
+    const db = getDatabase();
+    const swapId = `swap_${userId}_${Date.now()}`;
+    await db.swapHistory.create({
+      data: {
+        id: swapId,
+        userId: userId,
+        swapType: "gif",
+        creditsUsed: result.creditsCharged,
+        createdAt: BigInt(Date.now()),
+      },
+    });
+
+    // Get channel and post result publicly
+    const channel = interaction.channel;
+    if (channel && channel.isTextBased() && !channel.isDMBased()) {
+      await (channel as TextChannel).send({
+        content: `✅ <@${userId}> Face swap complete! Used ${
+          result.creditsCharged
+        } credits.${
+          isGif
+            ? "\n🎉 Result is an animated GIF!"
+            : "\n💡 Result is in MP4 format."
+        }`,
+        files: [attachment],
+      });
+    }
+
+    // Update interaction
+    await interaction.editReply({
+      content: "✅ Face swap complete! Check the channel for your result.",
+      components: [],
+    });
+
+    // Clean up state
+    deleteNativeGifState(sessionId);
+
+    logger.info(CONTEXT, "Native GIF face swap posted successfully", {
+      sessionId,
+      userId,
+    });
+  } catch (error: any) {
+    logger.error(
+      CONTEXT,
+      "Native GIF face swap failed",
+      { sessionId, userId },
+      error,
+    );
+
+    await interaction.editReply({
+      content: `❌ Face swap failed: ${error.message}`,
+      components: [],
+    });
+
+    deleteNativeGifState(sessionId);
   }
 }
