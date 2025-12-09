@@ -19,6 +19,7 @@ import { handleMyFacesCommand } from "./commands/myfaces";
 import { handleSaveMyFaceCommand } from "./commands/savemyface";
 import { handleDeleteMyFaceCommand } from "./commands/deletemyface";
 import { handleLeaderboardCommand } from "./commands/leaderboard";
+import { handleFaceSwapContextCommand } from "./commands/faceswapcontext";
 import { handleButtonInteraction } from "./interactions/buttonHandler";
 import { validateAllAPIs } from "./utils/apiValidator";
 import {
@@ -27,8 +28,6 @@ import {
   runCleanup,
 } from "./utils/database";
 import { logger } from "./utils/logger";
-import { isEligibleForGifSwap } from "./utils/gifDetector";
-import { handleNativeGifMessage } from "./handlers/nativeGifHandler";
 
 // Load environment variables
 dotenv.config();
@@ -155,6 +154,13 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     else if (interaction.isButton()) {
       await handleButtonInteraction(interaction);
     }
+
+    // Handle context menu commands
+    else if (interaction.isMessageContextMenuCommand()) {
+      if (interaction.commandName === "Face Swap This GIF") {
+        await handleFaceSwapContextCommand(interaction);
+      }
+    }
   } catch (error) {
     logger.error(
       "CommandHandler",
@@ -216,23 +222,6 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
         );
       }
     }
-  }
-});
-
-// Handle messages (for native GIF detection)
-client.on(Events.MessageCreate, async (message) => {
-  try {
-    // Check if message is eligible for native GIF face swap
-    if (isEligibleForGifSwap(message)) {
-      await handleNativeGifMessage(message);
-    }
-  } catch (error) {
-    logger.error(
-      "MessageHandler",
-      "Error handling message for GIF detection",
-      { messageId: message.id, userId: message.author?.id },
-      error as Error
-    );
   }
 });
 

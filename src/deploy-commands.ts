@@ -9,6 +9,7 @@ import { myfacesCommandData } from "./commands/myfaces";
 import { savemyfaceCommandData } from "./commands/savemyface";
 import { deletemyfaceCommandData } from "./commands/deletemyface";
 import { leaderboardCommandData } from "./commands/leaderboard";
+import { faceSwapContextCommandData } from "./commands/faceswapcontext";
 import { logger } from "./utils/logger";
 
 // Load environment variables
@@ -33,6 +34,7 @@ const commands = [
   savemyfaceCommandData.toJSON(),
   deletemyfaceCommandData.toJSON(),
   leaderboardCommandData.toJSON(),
+  faceSwapContextCommandData.toJSON(),
 ];
 
 const rest = new REST({ version: "10" }).setToken(
@@ -57,7 +59,7 @@ async function deployCommands() {
     commands.forEach((cmd) => {
       logger.debug("DeployCommands", "Command deployed", {
         name: cmd.name,
-        description: cmd.description,
+        description: (cmd as any).description,
       });
     });
 
