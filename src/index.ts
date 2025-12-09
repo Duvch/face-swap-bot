@@ -47,7 +47,7 @@ for (const envVar of requiredEnvVars) {
     });
     logger.error(
       "Startup",
-      "Please check your .env file and ensure all variables are set.",
+      "Please check your .env file and ensure all variables are set."
     );
     process.exit(1);
   }
@@ -62,7 +62,7 @@ initializeMagicHour(process.env.MAGIC_HOUR_API_KEY!);
 // Initialize Tenor API client
 initializeTenor(
   process.env.TENOR_API_KEY!,
-  process.env.TENOR_CLIENT_KEY || "discord-face-swap-bot",
+  process.env.TENOR_CLIENT_KEY || "discord-face-swap-bot"
 );
 
 // Create Discord client
@@ -85,13 +85,13 @@ const server = http.createServer(
           status: "ok",
           service: "discord-face-swap-bot",
           timestamp: new Date().toISOString(),
-        }),
+        })
       );
     } else {
       res.writeHead(404, { "Content-Type": "text/plain" });
       res.end("Not Found");
     }
-  },
+  }
 );
 
 // Start HTTP server on PORT (required for Render)
@@ -160,31 +160,61 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
       "CommandHandler",
       "Error handling interaction",
       null,
-      error as Error,
+      error as Error
     );
 
-    // Send error message to user
+    // Send error message to user only if interaction hasn't been acknowledged
     const errorMessage =
       "❌ An unexpected error occurred. Please try again later.";
 
     try {
       if (interaction.isRepliable()) {
+        // Check if interaction is already acknowledged to avoid "already acknowledged" errors
         if (interaction.replied || interaction.deferred) {
-          await interaction.followUp({
-            content: errorMessage,
-            ephemeral: true,
-          });
+          // Only try followUp if we haven't already replied/deferred
+          // Check if we can still follow up (interaction might be expired)
+          try {
+            await interaction.followUp({
+              content: errorMessage,
+              ephemeral: true,
+            });
+          } catch (followUpError: any) {
+            // Ignore "already acknowledged" errors - interaction was already handled
+            if (!followUpError.message?.includes("already been acknowledged")) {
+              logger.warn("CommandHandler", "Failed to send error follow-up", {
+                error: followUpError.message,
+              });
+            }
+          }
         } else {
-          await interaction.reply({ content: errorMessage, ephemeral: true });
+          // Try to reply if not yet acknowledged
+          try {
+            await interaction.reply({
+              content: errorMessage,
+              ephemeral: true,
+            });
+          } catch (replyError: any) {
+            // Ignore "already acknowledged" errors
+            if (!replyError.message?.includes("already been acknowledged")) {
+              logger.warn("CommandHandler", "Failed to send error reply", {
+                error: replyError.message,
+              });
+            }
+          }
         }
       }
     } catch (replyError) {
-      logger.error(
-        "CommandHandler",
-        "Error sending error follow-up message",
-        null,
-        replyError as Error,
-      );
+      // Only log if it's not an "already acknowledged" error
+      const errorMessage =
+        replyError instanceof Error ? replyError.message : String(replyError);
+      if (!errorMessage.includes("already been acknowledged")) {
+        logger.error(
+          "CommandHandler",
+          "Error sending error follow-up message",
+          null,
+          replyError as Error
+        );
+      }
     }
   }
 });
@@ -201,7 +231,7 @@ client.on(Events.MessageCreate, async (message) => {
       "MessageHandler",
       "Error handling message for GIF detection",
       { messageId: message.id, userId: message.author?.id },
-      error as Error,
+      error as Error
     );
   }
 });
@@ -247,7 +277,7 @@ process.on("SIGTERM", async () => {
   logger.info("Startup", "Validating APIs");
   const apisValid = await validateAllAPIs(
     process.env.MAGIC_HOUR_API_KEY!,
-    process.env.TENOR_API_KEY!,
+    process.env.TENOR_API_KEY!
   );
 
   if (!apisValid) {

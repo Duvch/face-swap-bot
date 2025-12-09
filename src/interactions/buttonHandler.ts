@@ -7,6 +7,8 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  PermissionFlagsBits,
+  MessageFlags,
 } from "discord.js";
 import {
   getSearchState,
@@ -74,7 +76,7 @@ function parseSearchAndFaceId(customId: string): {
  * Handle button interactions for GIF selection
  */
 export async function handleButtonInteraction(
-  interaction: ButtonInteraction,
+  interaction: ButtonInteraction
 ): Promise<void> {
   const customId = interaction.customId;
 
@@ -110,7 +112,7 @@ export async function handleButtonInteraction(
  * Handle GIF selection
  */
 async function handleGifSelection(
-  interaction: ButtonInteraction,
+  interaction: ButtonInteraction
 ): Promise<void> {
   await interaction.deferUpdate();
 
@@ -232,7 +234,7 @@ async function handleGifSelection(
   const faceButtons = buildFaceSelectionUI(
     savedFaces,
     searchId,
-    prefs.default_face_id,
+    prefs.default_face_id
   );
 
   // Show face selection or upload prompt
@@ -243,7 +245,7 @@ async function handleGifSelection(
       new EmbedBuilder()
         .setTitle("✅ Selected GIF")
         .setDescription(
-          `**"${selectedGif.title}"**\n\nChoose a saved face or upload a new one!`,
+          `**"${selectedGif.title}"**\n\nChoose a saved face or upload a new one!`
         )
         .setImage(getGifUrl(selectedGif))
         .setColor(0x00ff00)
@@ -262,7 +264,7 @@ async function handleGifSelection(
  */
 async function handlePageNavigation(
   interaction: ButtonInteraction,
-  direction: "next" | "prev",
+  direction: "next" | "prev"
 ): Promise<void> {
   await interaction.deferUpdate();
 
@@ -307,13 +309,13 @@ async function handlePageNavigation(
     currentGifs,
     state.query,
     newState.currentPage,
-    newState.totalPages,
+    newState.totalPages
   );
   const components = buildGifSelectionUI(
     searchId,
     currentGifs,
     newState.currentPage,
-    newState.totalPages,
+    newState.totalPages
   );
 
   await interaction.editReply({
@@ -339,7 +341,7 @@ async function handlePageNavigation(
 function buildFaceSelectionUI(
   savedFaces: any[],
   searchId: string,
-  defaultFaceId: string | null,
+  defaultFaceId: string | null
 ): ActionRowBuilder<ButtonBuilder>[] {
   const rows: ActionRowBuilder<ButtonBuilder>[] = [];
 
@@ -353,7 +355,7 @@ function buildFaceSelectionUI(
         new ButtonBuilder()
           .setCustomId(`face_select|${searchId}|${face.id}`)
           .setLabel(`${isDefault ? "⭐ " : ""}${face.name}`)
-          .setStyle(ButtonStyle.Primary),
+          .setStyle(ButtonStyle.Primary)
       );
     });
 
@@ -366,7 +368,7 @@ function buildFaceSelectionUI(
     new ButtonBuilder()
       .setCustomId(`face_upload|${searchId}`)
       .setLabel("📤 Upload New Face")
-      .setStyle(ButtonStyle.Secondary),
+      .setStyle(ButtonStyle.Secondary)
   );
   rows.push(uploadRow);
 
@@ -377,13 +379,13 @@ function buildFaceSelectionUI(
  * Handle saved face selection
  */
 async function handleSavedFaceSelection(
-  interaction: ButtonInteraction,
+  interaction: ButtonInteraction
 ): Promise<void> {
   await interaction.deferUpdate();
 
   // Parse custom ID
   const { searchId, faceId, legacy } = parseSearchAndFaceId(
-    interaction.customId,
+    interaction.customId
   );
 
   logger.debug(CONTEXT, "Saved face selection started", {
@@ -453,7 +455,7 @@ async function handleSavedFaceSelection(
         searchId,
         searchOwnerId: state.userId,
         attemptedBy: interaction.user.id,
-      },
+      }
     );
     await interaction.followUp({
       content: "❌ This is not your search!",
@@ -499,7 +501,7 @@ async function handleSavedFaceSelection(
       new EmbedBuilder()
         .setTitle("🔄 Processing")
         .setDescription(
-          `Using saved face: **${face.name}**\n\nThis may take 1-3 minutes...`,
+          `Using saved face: **${face.name}**\n\nThis may take 1-3 minutes...`
         )
         .setColor(0x5865f2),
     ],
@@ -520,7 +522,7 @@ async function handleSavedFaceSelection(
     state.selectedGif,
     face.magic_hour_path,
     searchId,
-    interaction.user.id,
+    interaction.user.id
   );
 }
 
@@ -528,7 +530,7 @@ async function handleSavedFaceSelection(
  * Handle face upload prompt
  */
 async function handleFaceUploadPrompt(
-  interaction: ButtonInteraction,
+  interaction: ButtonInteraction
 ): Promise<void> {
   await interaction.deferUpdate();
 
@@ -598,7 +600,7 @@ async function processFaceSwapWithSavedFace(
   selectedGif: any,
   facePath: string,
   searchId: string,
-  userId: string,
+  userId: string
 ): Promise<void> {
   try {
     logger.info(CONTEXT, "Processing face swap with saved face", {
@@ -650,7 +652,7 @@ async function processFaceSwapWithSavedFace(
     const resultResponse = await fetch(result.downloadUrl);
     if (!resultResponse.ok) {
       throw new Error(
-        `Failed to download result: ${resultResponse.statusText}`,
+        `Failed to download result: ${resultResponse.statusText}`
       );
     }
 
@@ -715,7 +717,7 @@ async function processFaceSwapWithSavedFace(
         searchId,
         userId,
       },
-      error,
+      error
     );
     if (channel.isTextBased()) {
       await channel.send({
@@ -730,7 +732,7 @@ async function processFaceSwapWithSavedFace(
  * Handle search cancellation
  */
 async function handleSearchCancel(
-  interaction: ButtonInteraction,
+  interaction: ButtonInteraction
 ): Promise<void> {
   await interaction.deferUpdate();
 
@@ -768,7 +770,7 @@ async function handleSearchCancel(
 async function waitForFaceUpload(
   interaction: ButtonInteraction,
   searchId: string,
-  selectedGif: any,
+  selectedGif: any
 ): Promise<void> {
   const channel = interaction.channel as TextChannel;
   const userId = interaction.user.id;
@@ -906,7 +908,7 @@ async function processFaceSwap(
   message: Message,
   selectedGif: any,
   faceImageUrl: string,
-  searchId: string,
+  searchId: string
 ): Promise<void> {
   const channel = message.channel;
 
@@ -940,7 +942,7 @@ async function processFaceSwap(
     const faceResponse = await fetch(faceImageUrl);
     if (!faceResponse.ok) {
       throw new Error(
-        `Failed to download face image: ${faceResponse.statusText}`,
+        `Failed to download face image: ${faceResponse.statusText}`
       );
     }
     const faceBuffer = Buffer.from(await faceResponse.arrayBuffer());
@@ -980,7 +982,7 @@ async function processFaceSwap(
     const resultResponse = await fetch(result.downloadUrl);
     if (!resultResponse.ok) {
       throw new Error(
-        `Failed to download result: ${resultResponse.statusText}`,
+        `Failed to download result: ${resultResponse.statusText}`
       );
     }
 
@@ -1050,7 +1052,7 @@ async function processFaceSwap(
         userId: message.author.id,
         searchId,
       },
-      error,
+      error
     );
     await statusMsg.edit({
       content: `❌ Face swap failed: ${error.message}`,
@@ -1068,9 +1070,30 @@ async function processFaceSwap(
  * Shows face selection UI (saved faces + upload option)
  */
 async function handleNativeGifSwapButton(
-  interaction: ButtonInteraction,
+  interaction: ButtonInteraction
 ): Promise<void> {
-  await interaction.deferReply({ ephemeral: true });
+  // Check if interaction is already acknowledged
+  if (interaction.replied || interaction.deferred) {
+    logger.warn(CONTEXT, "Interaction already acknowledged, skipping", {
+      customId: interaction.customId,
+      userId: interaction.user.id,
+    });
+    return;
+  }
+
+  try {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  } catch (error: any) {
+    // If already acknowledged, just return
+    if (error.message?.includes("already been acknowledged")) {
+      logger.warn(CONTEXT, "Interaction already acknowledged during defer", {
+        customId: interaction.customId,
+        userId: interaction.user.id,
+      });
+      return;
+    }
+    throw error; // Re-throw if it's a different error
+  }
 
   // Parse: native_gif_swap|{sessionId}
   const sessionId = interaction.customId.split("|")[1];
@@ -1112,7 +1135,7 @@ async function handleNativeGifSwapButton(
   const faceButtons = buildNativeGifFaceSelectionUI(
     savedFaces,
     sessionId,
-    prefs.default_face_id,
+    prefs.default_face_id
   );
 
   // Show face selection
@@ -1128,7 +1151,7 @@ async function handleNativeGifSwapButton(
 function buildNativeGifFaceSelectionUI(
   faces: any[],
   sessionId: string,
-  defaultFaceId: string | null,
+  defaultFaceId: string | null
 ): ActionRowBuilder<ButtonBuilder>[] {
   const rows: ActionRowBuilder<ButtonBuilder>[] = [];
 
@@ -1157,7 +1180,7 @@ function buildNativeGifFaceSelectionUI(
     new ButtonBuilder()
       .setCustomId(`native_upload_face|${sessionId}`)
       .setLabel("📤 Upload New Face")
-      .setStyle(ButtonStyle.Success),
+      .setStyle(ButtonStyle.Success)
   );
   rows.push(uploadRow);
 
@@ -1168,9 +1191,30 @@ function buildNativeGifFaceSelectionUI(
  * Handle saved face selection for native GIF
  */
 async function handleNativeGifFaceSelect(
-  interaction: ButtonInteraction,
+  interaction: ButtonInteraction
 ): Promise<void> {
-  await interaction.deferUpdate();
+  // Check if interaction is already acknowledged
+  if (interaction.replied || interaction.deferred) {
+    logger.warn(CONTEXT, "Interaction already acknowledged, skipping", {
+      customId: interaction.customId,
+      userId: interaction.user.id,
+    });
+    return;
+  }
+
+  try {
+    await interaction.deferUpdate();
+  } catch (error: any) {
+    // If already acknowledged, just return
+    if (error.message?.includes("already been acknowledged")) {
+      logger.warn(CONTEXT, "Interaction already acknowledged during defer", {
+        customId: interaction.customId,
+        userId: interaction.user.id,
+      });
+      return;
+    }
+    throw error; // Re-throw if it's a different error
+  }
 
   // Parse: native_face_select|{sessionId}|{faceId}
   const [, sessionId, faceId] = interaction.customId.split("|");
@@ -1210,7 +1254,7 @@ async function handleNativeGifFaceSelect(
   await processNativeGifFaceSwap(
     interaction,
     state,
-    selectedFace.magic_hour_path,
+    selectedFace.magic_hour_path
   );
 
   // Increment usage
@@ -1221,9 +1265,30 @@ async function handleNativeGifFaceSelect(
  * Handle face upload for native GIF
  */
 async function handleNativeGifFaceUpload(
-  interaction: ButtonInteraction,
+  interaction: ButtonInteraction
 ): Promise<void> {
-  await interaction.deferUpdate();
+  // Check if interaction is already acknowledged
+  if (interaction.replied || interaction.deferred) {
+    logger.warn(CONTEXT, "Interaction already acknowledged, skipping", {
+      customId: interaction.customId,
+      userId: interaction.user.id,
+    });
+    return;
+  }
+
+  try {
+    await interaction.deferUpdate();
+  } catch (error: any) {
+    // If already acknowledged, just return
+    if (error.message?.includes("already been acknowledged")) {
+      logger.warn(CONTEXT, "Interaction already acknowledged during defer", {
+        customId: interaction.customId,
+        userId: interaction.user.id,
+      });
+      return;
+    }
+    throw error; // Re-throw if it's a different error
+  }
 
   // Parse: native_upload_face|{sessionId}
   const sessionId = interaction.customId.split("|")[1];
@@ -1285,24 +1350,58 @@ async function handleNativeGifFaceUpload(
       // Upload to Magic Hour
       const facePath = await uploadToMagicHour(
         buffer,
-        attachment.name?.split(".").pop() || "jpg",
+        attachment.name?.split(".").pop() || "jpg"
       );
 
       // Start face swap
       await processNativeGifFaceSwap(interaction, state, facePath);
 
       // Delete user's upload message to keep channel clean
+      // This happens after successful face swap processing
       try {
-        await message.delete();
-      } catch {
-        // Ignore if can't delete
+        // Check if bot has permission to manage messages
+        const messageChannel = message.channel;
+        if (messageChannel.isTextBased() && !messageChannel.isDMBased()) {
+          const textChannel = messageChannel as TextChannel;
+          const botMember = textChannel.guild?.members.me;
+          const hasPermission =
+            botMember &&
+            textChannel
+              .permissionsFor(botMember)
+              ?.has(PermissionFlagsBits.ManageMessages);
+
+          if (!hasPermission) {
+            logger.warn(CONTEXT, "Bot lacks Manage Messages permission", {
+              channelId: textChannel.id,
+              sessionId,
+              userId,
+            });
+          } else {
+            await message.delete();
+            logger.info(CONTEXT, "Face upload message deleted", {
+              messageId: message.id,
+              sessionId,
+              userId,
+            });
+          }
+        }
+      } catch (error: any) {
+        // Log error but don't fail - message deletion is not critical
+        const errorMessage = error.message || String(error);
+        logger.warn(CONTEXT, "Failed to delete face upload message", {
+          messageId: message.id,
+          sessionId,
+          userId,
+          error: errorMessage,
+          errorCode: error.code,
+        });
       }
     } catch (error: any) {
       logger.error(
         CONTEXT,
         "Error processing uploaded face for native GIF",
         { sessionId, userId },
-        error,
+        error
       );
       await interaction.followUp({
         content: `❌ Error processing image: ${error.message}`,
@@ -1311,12 +1410,23 @@ async function handleNativeGifFaceUpload(
     }
   });
 
-  collector.on("end", (collected: any, reason: string) => {
+  collector.on("end", async (collected: any, reason: string) => {
     if (collected.size === 0 && reason === "time") {
-      interaction.followUp({
-        content: "⏱️ Timeout! You didn't upload an image in time.",
-        ephemeral: true,
-      });
+      try {
+        await interaction.followUp({
+          content: "⏱️ Timeout! You didn't upload an image in time.",
+          ephemeral: true,
+        });
+      } catch (error: any) {
+        // Ignore if interaction is already handled or expired
+        if (!error.message?.includes("already been acknowledged")) {
+          logger.warn(CONTEXT, "Failed to send timeout message", {
+            sessionId,
+            userId,
+            error: error.message || error,
+          });
+        }
+      }
     }
   });
 }
@@ -1327,7 +1437,7 @@ async function handleNativeGifFaceUpload(
 async function processNativeGifFaceSwap(
   interaction: ButtonInteraction,
   state: any,
-  facePath: string,
+  facePath: string
 ): Promise<void> {
   const userId = interaction.user.id;
   const sessionId = state.id;
@@ -1371,7 +1481,7 @@ async function processNativeGifFaceSwap(
     const resultResponse = await fetch(result.downloadUrl);
     if (!resultResponse.ok) {
       throw new Error(
-        `Failed to download result: ${resultResponse.statusText}`,
+        `Failed to download result: ${resultResponse.statusText}`
       );
     }
 
@@ -1400,19 +1510,131 @@ async function processNativeGifFaceSwap(
       },
     });
 
-    // Get channel and post result publicly
-    const channel = interaction.channel;
-    if (channel && channel.isTextBased() && !channel.isDMBased()) {
-      await (channel as TextChannel).send({
-        content: `✅ <@${userId}> Face swap complete! Used ${
-          result.creditsCharged
-        } credits.${
-          isGif
-            ? "\n🎉 Result is an animated GIF!"
-            : "\n💡 Result is in MP4 format."
-        }`,
+    // Get channel and delete the original GIF message
+    // Use state.channelId to fetch the correct channel
+    let channel: TextChannel | null = null;
+    try {
+      const fetchedChannel = await interaction.client.channels.fetch(
+        state.channelId
+      );
+      if (
+        fetchedChannel &&
+        fetchedChannel.isTextBased() &&
+        !fetchedChannel.isDMBased()
+      ) {
+        channel = fetchedChannel as TextChannel;
+      }
+    } catch (error: any) {
+      logger.warn(CONTEXT, "Failed to fetch channel for message deletion", {
+        channelId: state.channelId,
+        sessionId,
+        userId,
+        error: error.message,
+      });
+    }
+
+    if (channel) {
+      // Delete the original GIF message
+      try {
+        // Check if bot has permission to manage messages
+        const botMember = channel.guild?.members.me;
+        const hasPermission =
+          botMember &&
+          channel
+            .permissionsFor(botMember)
+            ?.has(PermissionFlagsBits.ManageMessages);
+
+        logger.debug(CONTEXT, "Checking deletion permissions", {
+          channelId: channel.id,
+          hasPermission: !!hasPermission,
+          botMemberId: botMember?.id,
+          sessionId,
+          userId,
+        });
+
+        if (!hasPermission) {
+          logger.warn(CONTEXT, "Bot lacks Manage Messages permission", {
+            channelId: channel.id,
+            guildId: channel.guild?.id,
+            sessionId,
+            userId,
+          });
+        } else {
+          logger.debug(CONTEXT, "Fetching original message for deletion", {
+            messageId: state.messageId,
+            channelId: channel.id,
+            sessionId,
+            userId,
+          });
+
+          const originalMessage = await channel.messages.fetch(state.messageId);
+
+          if (originalMessage) {
+            logger.debug(
+              CONTEXT,
+              "Original message found, attempting deletion",
+              {
+                messageId: state.messageId,
+                messageAuthorId: originalMessage.author.id,
+                messageCreatedAt: originalMessage.createdAt.toISOString(),
+                sessionId,
+                userId,
+              }
+            );
+
+            await originalMessage.delete();
+            logger.info(CONTEXT, "Original GIF message deleted successfully", {
+              messageId: state.messageId,
+              sessionId,
+              userId,
+            });
+          } else {
+            logger.warn(CONTEXT, "Original message not found", {
+              messageId: state.messageId,
+              channelId: channel.id,
+              sessionId,
+              userId,
+            });
+          }
+        }
+      } catch (error: any) {
+        // Log error but don't fail the entire operation
+        const errorMessage = error.message || String(error);
+        logger.warn(CONTEXT, "Failed to delete original GIF message", {
+          messageId: state.messageId,
+          channelId: channel.id,
+          sessionId,
+          userId,
+          error: errorMessage,
+          errorCode: error.code,
+          errorName: error.name,
+          // Log full error for debugging
+          fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+        });
+      }
+
+      // Post result publicly with simple message
+      await channel.send({
+        content: `Here you go! <@${userId}>`,
         files: [attachment],
       });
+    } else {
+      // Fallback: try using interaction.channel if available
+      const fallbackChannel = interaction.channel;
+      if (
+        fallbackChannel &&
+        fallbackChannel.isTextBased() &&
+        !fallbackChannel.isDMBased()
+      ) {
+        await (fallbackChannel as TextChannel).send({
+          content: `Here you go! <@${userId}>`,
+          files: [attachment],
+        });
+        logger.warn(CONTEXT, "Used fallback channel for result", {
+          sessionId,
+          userId,
+        });
+      }
     }
 
     // Update interaction
@@ -1433,13 +1655,25 @@ async function processNativeGifFaceSwap(
       CONTEXT,
       "Native GIF face swap failed",
       { sessionId, userId },
-      error,
+      error
     );
 
-    await interaction.editReply({
-      content: `❌ Face swap failed: ${error.message}`,
-      components: [],
-    });
+    // Only try to edit reply if interaction is still valid
+    try {
+      if (!interaction.replied && interaction.deferred) {
+        await interaction.editReply({
+          content: `❌ Face swap failed: ${error.message}`,
+          components: [],
+        });
+      }
+    } catch (editError: any) {
+      // Ignore errors if interaction is already handled or expired
+      logger.warn(CONTEXT, "Failed to edit reply on error", {
+        sessionId,
+        userId,
+        error: editError.message || editError,
+      });
+    }
 
     deleteNativeGifState(sessionId);
   }

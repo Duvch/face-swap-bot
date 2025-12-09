@@ -145,3 +145,6 @@ export function isEligibleForGifSwap(message: Message): boolean {
 
   return true;
 }
+
+
+
