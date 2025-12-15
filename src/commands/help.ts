@@ -49,68 +49,18 @@ async function showGeneralHelp(
   const embed = new EmbedBuilder()
     .setTitle("🤖 Face Swap Bot - Help")
     .setDescription(
-      "A Discord bot that swaps faces in images and GIFs using AI!\n\n" +
-        "**Quick Start:**\n" +
-        "1. Use `/gifsearch` to browse GIFs\n" +
-        "2. Select a GIF and upload your face\n" +
-        "3. Get your face-swapped result!\n\n" +
-        "**Or use direct commands:**\n" +
-        "• `/faceswap` - Swap faces in static images\n" +
-        "• `/faceswapgif` - Swap faces in GIFs/videos\n" +
-        "• `/gifsearch` - Browse and search GIFs from Tenor",
+      "AI-powered face swapping bot for Discord! Swap faces in images and GIFs with ease.\n\n" +
+        "**How to Use**\n\n" +
+        "1. Right-click any GIF → Apps → Face Swap This GIF\n" +
+        "2. Select the face you want to swap\n" +
+        "3. Done!\n\n" +
+        "**Commands**\n\n" +
+        "- /savemyface - Save your face (max 3)\n" +
+        "- /myfaces - View saved faces\n" +
+        "- /deletemyface - Delete a saved face\n" +
+        "- /help - Get help",
     )
-    .addFields(
-      {
-        name: "📸 Image Face Swap",
-        value:
-          "`/faceswap source_face:[image] target_image:[image]`\n" +
-          "Swap faces between two static images. Fast and simple!",
-        inline: false,
-      },
-      {
-        name: "🎬 GIF Face Swap",
-        value:
-          "`/faceswapgif source_face:[image] target_gif:[gif]`\n" +
-          "Swap faces in animated GIFs. Returns MP4 or GIF format.",
-        inline: false,
-      },
-      {
-        name: "🔍 GIF Search (Recommended!)",
-        value:
-          "`/gifsearch query:[search term]`\n" +
-          "Browse thousands of GIFs, select one, upload your face, done!",
-        inline: false,
-      },
-      {
-        name: "💾 Saved Faces",
-        value:
-          "`/myfaces` - View your saved faces\n" +
-          "`/savemyface name:[name]` - Save a new face (max 3)\n" +
-          "`/deletemyface id:[face_id]` - Delete a saved face",
-        inline: false,
-      },
-      {
-        name: "⚙️ Settings",
-        value:
-          "`/settings` - Manage your preferences\n" +
-          "Set default face, auto-save, and more!",
-        inline: false,
-      },
-      {
-        name: "💡 Tips",
-        value:
-          "• Use clear, front-facing photos for best results\n" +
-          "• GIF processing takes 1-3 minutes\n" +
-          "• Each image swap costs 5 credits\n" +
-          "• GIF swaps cost more based on duration\n" +
-          "• Save your faces to reuse them quickly!",
-        inline: false,
-      },
-    )
-    .setColor(0x5865f2)
-    .setFooter({
-      text: "Use /help [command] for detailed help on a specific command",
-    });
+    .setColor(0x5865f2);
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
 }

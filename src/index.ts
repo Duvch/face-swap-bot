@@ -46,7 +46,7 @@ for (const envVar of requiredEnvVars) {
     });
     logger.error(
       "Startup",
-      "Please check your .env file and ensure all variables are set."
+      "Please check your .env file and ensure all variables are set.",
     );
     process.exit(1);
   }
@@ -61,7 +61,7 @@ initializeMagicHour(process.env.MAGIC_HOUR_API_KEY!);
 // Initialize Tenor API client
 initializeTenor(
   process.env.TENOR_API_KEY!,
-  process.env.TENOR_CLIENT_KEY || "discord-face-swap-bot"
+  process.env.TENOR_CLIENT_KEY || "discord-face-swap-bot",
 );
 
 // Create Discord client
@@ -84,13 +84,13 @@ const server = http.createServer(
           status: "ok",
           service: "discord-face-swap-bot",
           timestamp: new Date().toISOString(),
-        })
+        }),
       );
     } else {
       res.writeHead(404, { "Content-Type": "text/plain" });
       res.end("Not Found");
     }
-  }
+  },
 );
 
 // Start HTTP server on PORT (required for Render)
@@ -166,7 +166,7 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
       "CommandHandler",
       "Error handling interaction",
       null,
-      error as Error
+      error as Error,
     );
 
     // Send error message to user only if interaction hasn't been acknowledged
@@ -218,7 +218,7 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
           "CommandHandler",
           "Error sending error follow-up message",
           null,
-          replyError as Error
+          replyError as Error,
         );
       }
     }
@@ -266,7 +266,7 @@ process.on("SIGTERM", async () => {
   logger.info("Startup", "Validating APIs");
   const apisValid = await validateAllAPIs(
     process.env.MAGIC_HOUR_API_KEY!,
-    process.env.TENOR_API_KEY!
+    process.env.TENOR_API_KEY!,
   );
 
   if (!apisValid) {

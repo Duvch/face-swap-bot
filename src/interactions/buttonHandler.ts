@@ -76,7 +76,7 @@ function parseSearchAndFaceId(customId: string): {
  * Handle button interactions for GIF selection
  */
 export async function handleButtonInteraction(
-  interaction: ButtonInteraction
+  interaction: ButtonInteraction,
 ): Promise<void> {
   const customId = interaction.customId;
 
@@ -112,7 +112,7 @@ export async function handleButtonInteraction(
  * Handle GIF selection
  */
 async function handleGifSelection(
-  interaction: ButtonInteraction
+  interaction: ButtonInteraction,
 ): Promise<void> {
   await interaction.deferUpdate();
 
@@ -234,7 +234,7 @@ async function handleGifSelection(
   const faceButtons = buildFaceSelectionUI(
     savedFaces,
     searchId,
-    prefs.default_face_id
+    prefs.default_face_id,
   );
 
   // Show face selection or upload prompt
@@ -245,7 +245,7 @@ async function handleGifSelection(
       new EmbedBuilder()
         .setTitle("✅ Selected GIF")
         .setDescription(
-          `**"${selectedGif.title}"**\n\nChoose a saved face or upload a new one!`
+          `**"${selectedGif.title}"**\n\nChoose a saved face or upload a new one!`,
         )
         .setImage(getGifUrl(selectedGif))
         .setColor(0x00ff00)
@@ -264,7 +264,7 @@ async function handleGifSelection(
  */
 async function handlePageNavigation(
   interaction: ButtonInteraction,
-  direction: "next" | "prev"
+  direction: "next" | "prev",
 ): Promise<void> {
   await interaction.deferUpdate();
 
@@ -309,13 +309,13 @@ async function handlePageNavigation(
     currentGifs,
     state.query,
     newState.currentPage,
-    newState.totalPages
+    newState.totalPages,
   );
   const components = buildGifSelectionUI(
     searchId,
     currentGifs,
     newState.currentPage,
-    newState.totalPages
+    newState.totalPages,
   );
 
   await interaction.editReply({
@@ -341,7 +341,7 @@ async function handlePageNavigation(
 function buildFaceSelectionUI(
   savedFaces: any[],
   searchId: string,
-  defaultFaceId: string | null
+  defaultFaceId: string | null,
 ): ActionRowBuilder<ButtonBuilder>[] {
   const rows: ActionRowBuilder<ButtonBuilder>[] = [];
 
@@ -355,7 +355,7 @@ function buildFaceSelectionUI(
         new ButtonBuilder()
           .setCustomId(`face_select|${searchId}|${face.id}`)
           .setLabel(`${isDefault ? "⭐ " : ""}${face.name}`)
-          .setStyle(ButtonStyle.Primary)
+          .setStyle(ButtonStyle.Primary),
       );
     });
 
@@ -368,7 +368,7 @@ function buildFaceSelectionUI(
     new ButtonBuilder()
       .setCustomId(`face_upload|${searchId}`)
       .setLabel("📤 Upload New Face")
-      .setStyle(ButtonStyle.Secondary)
+      .setStyle(ButtonStyle.Secondary),
   );
   rows.push(uploadRow);
 
@@ -379,13 +379,13 @@ function buildFaceSelectionUI(
  * Handle saved face selection
  */
 async function handleSavedFaceSelection(
-  interaction: ButtonInteraction
+  interaction: ButtonInteraction,
 ): Promise<void> {
   await interaction.deferUpdate();
 
   // Parse custom ID
   const { searchId, faceId, legacy } = parseSearchAndFaceId(
-    interaction.customId
+    interaction.customId,
   );
 
   logger.debug(CONTEXT, "Saved face selection started", {
@@ -455,7 +455,7 @@ async function handleSavedFaceSelection(
         searchId,
         searchOwnerId: state.userId,
         attemptedBy: interaction.user.id,
-      }
+      },
     );
     await interaction.followUp({
       content: "❌ This is not your search!",
@@ -501,7 +501,7 @@ async function handleSavedFaceSelection(
       new EmbedBuilder()
         .setTitle("🔄 Processing")
         .setDescription(
-          `Using saved face: **${face.name}**\n\nThis may take 1-3 minutes...`
+          `Using saved face: **${face.name}**\n\nThis may take 1-3 minutes...`,
         )
         .setColor(0x5865f2),
     ],
@@ -522,7 +522,7 @@ async function handleSavedFaceSelection(
     state.selectedGif,
     face.magic_hour_path,
     searchId,
-    interaction.user.id
+    interaction.user.id,
   );
 }
 
@@ -530,7 +530,7 @@ async function handleSavedFaceSelection(
  * Handle face upload prompt
  */
 async function handleFaceUploadPrompt(
-  interaction: ButtonInteraction
+  interaction: ButtonInteraction,
 ): Promise<void> {
   await interaction.deferUpdate();
 
@@ -600,7 +600,7 @@ async function processFaceSwapWithSavedFace(
   selectedGif: any,
   facePath: string,
   searchId: string,
-  userId: string
+  userId: string,
 ): Promise<void> {
   try {
     logger.info(CONTEXT, "Processing face swap with saved face", {
@@ -652,7 +652,7 @@ async function processFaceSwapWithSavedFace(
     const resultResponse = await fetch(result.downloadUrl);
     if (!resultResponse.ok) {
       throw new Error(
-        `Failed to download result: ${resultResponse.statusText}`
+        `Failed to download result: ${resultResponse.statusText}`,
       );
     }
 
@@ -717,7 +717,7 @@ async function processFaceSwapWithSavedFace(
         searchId,
         userId,
       },
-      error
+      error,
     );
     if (channel.isTextBased()) {
       await channel.send({
@@ -732,7 +732,7 @@ async function processFaceSwapWithSavedFace(
  * Handle search cancellation
  */
 async function handleSearchCancel(
-  interaction: ButtonInteraction
+  interaction: ButtonInteraction,
 ): Promise<void> {
   await interaction.deferUpdate();
 
@@ -770,7 +770,7 @@ async function handleSearchCancel(
 async function waitForFaceUpload(
   interaction: ButtonInteraction,
   searchId: string,
-  selectedGif: any
+  selectedGif: any,
 ): Promise<void> {
   const channel = interaction.channel as TextChannel;
   const userId = interaction.user.id;
@@ -908,7 +908,7 @@ async function processFaceSwap(
   message: Message,
   selectedGif: any,
   faceImageUrl: string,
-  searchId: string
+  searchId: string,
 ): Promise<void> {
   const channel = message.channel;
 
@@ -942,7 +942,7 @@ async function processFaceSwap(
     const faceResponse = await fetch(faceImageUrl);
     if (!faceResponse.ok) {
       throw new Error(
-        `Failed to download face image: ${faceResponse.statusText}`
+        `Failed to download face image: ${faceResponse.statusText}`,
       );
     }
     const faceBuffer = Buffer.from(await faceResponse.arrayBuffer());
@@ -982,7 +982,7 @@ async function processFaceSwap(
     const resultResponse = await fetch(result.downloadUrl);
     if (!resultResponse.ok) {
       throw new Error(
-        `Failed to download result: ${resultResponse.statusText}`
+        `Failed to download result: ${resultResponse.statusText}`,
       );
     }
 
@@ -1052,7 +1052,7 @@ async function processFaceSwap(
         userId: message.author.id,
         searchId,
       },
-      error
+      error,
     );
     await statusMsg.edit({
       content: `❌ Face swap failed: ${error.message}`,
@@ -1070,7 +1070,7 @@ async function processFaceSwap(
  * Shows face selection UI (saved faces + upload option)
  */
 async function handleNativeGifSwapButton(
-  interaction: ButtonInteraction
+  interaction: ButtonInteraction,
 ): Promise<void> {
   // Check if interaction is already acknowledged
   if (interaction.replied || interaction.deferred) {
@@ -1135,7 +1135,7 @@ async function handleNativeGifSwapButton(
   const faceButtons = buildNativeGifFaceSelectionUI(
     savedFaces,
     sessionId,
-    prefs.default_face_id
+    prefs.default_face_id,
   );
 
   // Show face selection
@@ -1151,7 +1151,7 @@ async function handleNativeGifSwapButton(
 function buildNativeGifFaceSelectionUI(
   faces: any[],
   sessionId: string,
-  defaultFaceId: string | null
+  defaultFaceId: string | null,
 ): ActionRowBuilder<ButtonBuilder>[] {
   const rows: ActionRowBuilder<ButtonBuilder>[] = [];
 
@@ -1180,7 +1180,7 @@ function buildNativeGifFaceSelectionUI(
     new ButtonBuilder()
       .setCustomId(`native_upload_face|${sessionId}`)
       .setLabel("📤 Upload New Face")
-      .setStyle(ButtonStyle.Success)
+      .setStyle(ButtonStyle.Success),
   );
   rows.push(uploadRow);
 
@@ -1191,7 +1191,7 @@ function buildNativeGifFaceSelectionUI(
  * Handle saved face selection for native GIF
  */
 async function handleNativeGifFaceSelect(
-  interaction: ButtonInteraction
+  interaction: ButtonInteraction,
 ): Promise<void> {
   // Check if interaction is already acknowledged
   if (interaction.replied || interaction.deferred) {
@@ -1254,7 +1254,7 @@ async function handleNativeGifFaceSelect(
   await processNativeGifFaceSwap(
     interaction,
     state,
-    selectedFace.magic_hour_path
+    selectedFace.magic_hour_path,
   );
 
   // Increment usage
@@ -1265,7 +1265,7 @@ async function handleNativeGifFaceSelect(
  * Handle face upload for native GIF
  */
 async function handleNativeGifFaceUpload(
-  interaction: ButtonInteraction
+  interaction: ButtonInteraction,
 ): Promise<void> {
   // Check if interaction is already acknowledged
   if (interaction.replied || interaction.deferred) {
@@ -1350,7 +1350,7 @@ async function handleNativeGifFaceUpload(
       // Upload to Magic Hour
       const facePath = await uploadToMagicHour(
         buffer,
-        attachment.name?.split(".").pop() || "jpg"
+        attachment.name?.split(".").pop() || "jpg",
       );
 
       // Start face swap
@@ -1401,7 +1401,7 @@ async function handleNativeGifFaceUpload(
         CONTEXT,
         "Error processing uploaded face for native GIF",
         { sessionId, userId },
-        error
+        error,
       );
       await interaction.followUp({
         content: `❌ Error processing image: ${error.message}`,
@@ -1437,7 +1437,7 @@ async function handleNativeGifFaceUpload(
 async function processNativeGifFaceSwap(
   interaction: ButtonInteraction,
   state: any,
-  facePath: string
+  facePath: string,
 ): Promise<void> {
   const userId = interaction.user.id;
   const sessionId = state.id;
@@ -1481,7 +1481,7 @@ async function processNativeGifFaceSwap(
     const resultResponse = await fetch(result.downloadUrl);
     if (!resultResponse.ok) {
       throw new Error(
-        `Failed to download result: ${resultResponse.statusText}`
+        `Failed to download result: ${resultResponse.statusText}`,
       );
     }
 
@@ -1515,7 +1515,7 @@ async function processNativeGifFaceSwap(
     let channel: TextChannel | null = null;
     try {
       const fetchedChannel = await interaction.client.channels.fetch(
-        state.channelId
+        state.channelId,
       );
       if (
         fetchedChannel &&
@@ -1579,7 +1579,7 @@ async function processNativeGifFaceSwap(
                 messageCreatedAt: originalMessage.createdAt.toISOString(),
                 sessionId,
                 userId,
-              }
+              },
             );
 
             await originalMessage.delete();
@@ -1655,7 +1655,7 @@ async function processNativeGifFaceSwap(
       CONTEXT,
       "Native GIF face swap failed",
       { sessionId, userId },
-      error
+      error,
     );
 
     // Only try to edit reply if interaction is still valid

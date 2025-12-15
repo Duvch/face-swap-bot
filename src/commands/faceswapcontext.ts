@@ -26,7 +26,7 @@ export const faceSwapContextCommandData = new ContextMenuCommandBuilder()
 function buildFaceSelectionUI(
   faces: any[],
   sessionId: string,
-  defaultFaceId: string | null
+  defaultFaceId: string | null,
 ): ActionRowBuilder<ButtonBuilder>[] {
   const rows: ActionRowBuilder<ButtonBuilder>[] = [];
 
@@ -55,7 +55,7 @@ function buildFaceSelectionUI(
     new ButtonBuilder()
       .setCustomId(`native_upload_face|${sessionId}`)
       .setLabel("📤 Upload New Face")
-      .setStyle(ButtonStyle.Success)
+      .setStyle(ButtonStyle.Success),
   );
   rows.push(uploadRow);
 
@@ -66,7 +66,7 @@ function buildFaceSelectionUI(
  * Handle the context menu command
  */
 export async function handleFaceSwapContextCommand(
-  interaction: MessageContextMenuCommandInteraction
+  interaction: MessageContextMenuCommandInteraction,
 ): Promise<void> {
   const userId = interaction.user.id;
   const message = interaction.targetMessage;
@@ -105,7 +105,8 @@ export async function handleFaceSwapContextCommand(
   const gifDetails = detectGif(message);
   if (!gifDetails) {
     await interaction.editReply({
-      content: "❌ This message doesn't contain a GIF. Please right-click on a message with a GIF.",
+      content:
+        "❌ This message doesn't contain a GIF. Please right-click on a message with a GIF.",
     });
     logger.warn(CONTEXT, "No GIF detected in target message", {
       userId,
@@ -126,7 +127,7 @@ export async function handleFaceSwapContextCommand(
     gifDetails.url,
     userId,
     message.id,
-    interaction.channelId
+    interaction.channelId,
   );
 
   // Get saved faces for user
@@ -144,7 +145,7 @@ export async function handleFaceSwapContextCommand(
   const faceButtons = buildFaceSelectionUI(
     savedFaces,
     state.id,
-    prefs.default_face_id
+    prefs.default_face_id,
   );
 
   // Show face selection (ephemeral - only visible to the user)
@@ -158,4 +159,3 @@ export async function handleFaceSwapContextCommand(
     userId,
   });
 }
-

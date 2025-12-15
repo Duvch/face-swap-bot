@@ -1,0 +1,34 @@
+Discord Face Swap Bot - Description
+
+SHORT DESCRIPTION (for Discord Developer Portal)
+
+Sponsored by magichour.ai | Built using magichour.ai
+
+AI-powered face swapping bot for Discord! Swap faces in images and GIFs.
+
+How to use: Right-click any GIF → Apps → Face Swap This GIF → Select face → Done!
+
+How to use or add to your server: https://magicgif.lovable.app/
+
+---
+
+FULL BOT DESCRIPTION
+
+Sponsored by magichour.ai | Built using magichour.ai
+
+AI-powered face swapping bot for Discord! Swap faces in images and GIFs with ease.
+
+How to Use
+
+1. Right-click any GIF → Apps → Face Swap This GIF
+2. Select the face you want to swap
+3. Done!
+
+Commands
+
+- /savemyface - Save your face (max 3)
+- /myfaces - View saved faces
+- /deletemyface - Delete a saved face
+- /help - Get help
+
+
